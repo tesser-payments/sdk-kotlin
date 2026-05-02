@@ -307,3 +307,14 @@ gradle-app.setting
 docs/superpowers/
 # one-shot probe directories (Task 1; deleted in Task 7)
 _probe/
+# dotenv files — anywhere in the tree — must be ignored (real secrets) but keep templates
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Ignore Gradle build output directory
+build
+
+# Ignore Kotlin plugin data
+.kotlin

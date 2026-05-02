@@ -1,0 +1,37 @@
+[versions]
+kotlin = "2.0.21"
+coroutines = "1.9.0"
+serialization = "1.7.3"
+slf4j = "2.0.16"
+junit = "5.11.3"
+junit-platform = "1.11.3"          # tracks junit jupiter; JUnit Platform versioning is +0 from Jupiter (5.11.3 → platform 1.11.3)
+kotest = "5.9.1"
+mockk = "1.13.13"
+ktlint-plugin = "12.1.1"
+dokka = "2.0.0"
+maven-publish = "0.30.0"           # Vanniktech — Maven Central / Sonatype Central Portal automation
+binary-compat = "0.16.3"           # kotlinx-binary-compatibility-validator — enforces api/sdk.api lockfile
+bouncycastle = "1.82"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+# Pre-declared for Phase B (`JdkHttpTransport.sendAsync().await()`); v0.0.1 has no HTTP and does not consume this.
+kotlinx-coroutines-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+bouncycastle = { module = "org.bouncycastle:bcprov-jdk15to18", version.ref = "bouncycastle" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "binary-compat" }
