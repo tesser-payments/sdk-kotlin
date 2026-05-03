@@ -1,15 +1,27 @@
 # Tesser Kotlin SDK
 
-Kotlin SDK for the [Tesser API](https://docs.tesser.xyz). v0.0.1 ships local
-Turnkey signing for `signCreateWallet`. JVM 17+, Kotlin 2.0+.
+Kotlin SDK for the [Tesser API](https://docs.tesser.xyz). JVM 17+, Kotlin 2.0+.
 
-## Install (Maven Central — once published)
+> **Status:** v0.0.1 — signer-only (`signCreateWallet`). HTTP layer, OAuth integration, and a `:sdk-ktor` companion module are planned for Phase B.
+
+## Install
+
+**Gradle (Kotlin DSL):**
 
 ```kotlin
-// build.gradle.kts
 dependencies {
-  implementation("xyz.tesser:sdk:0.0.1")
+    implementation("xyz.tesser:sdk:0.0.1")
 }
+```
+
+**Maven:**
+
+```xml
+<dependency>
+    <groupId>xyz.tesser</groupId>
+    <artifactId>sdk</artifactId>
+    <version>0.0.1</version>
+</dependency>
 ```
 
 ## Quick start
@@ -40,35 +52,25 @@ fun main() = runBlocking {
 }
 ```
 
-See [`examples/create-wallet`](./examples/create-wallet) for an end-to-end script
-that performs the OAuth handshake and submits the request against Tesser staging.
-The [examples README](./examples/README.md) walks through env-file setup and
-troubleshooting step-by-step.
-
 ## What's in v0.0.1
 
 - `LocalSigner.signCreateWallet(...)` — pure local Turnkey stamp; no HTTP, no RPC.
 - Wallet types: `STABLECOIN_ETHEREUM`, `STABLECOIN_SOLANA`, `STABLECOIN_STELLAR`.
-- Sealed `TesserError` hierarchy with `errors[]` envelope support — Phase B's HTTP
-  layer fills it in; v0.0.1 only ever throws `ConfigError` or `SigningError`.
+- Sealed `TesserError` hierarchy with `errors[]` envelope support — Phase B's HTTP layer fills it in; v0.0.1 only ever throws `ConfigError` or `SigningError`.
 
 ## What's coming in Phase B
 
-- `TesserClient` with pluggable `HttpTransport` (default JDK 11; opt-in `:sdk-ktor`
-  companion module for Ktor users).
+- `TesserClient` with pluggable `HttpTransport` (default JDK 11; opt-in `:sdk-ktor` companion module for Ktor users).
 - `LocalSigner.signStep(...)` for ERC-20 transfer signing.
 - Caller-managed OAuth via `TesserAuthConfig.Lambda { ... }`.
 
-See [`docs/superpowers/specs/2026-04-30-kotlin-sdk-design.md`](./docs/superpowers/specs/2026-04-30-kotlin-sdk-design.md)
-(local-only) for the full Phase B design.
+## End-to-end example
 
-## Building
+See [`examples/create-wallet`](./examples/create-wallet) for a runnable script that performs the OAuth handshake, signs the request locally, and submits it to Tesser staging. The [examples README](./examples/README.md) walks through env-file setup (`.env.example` template, `set -a && source` pattern), expected output, and a troubleshooting table covering common failure modes (bad credentials, wrong audience, key-format mistakes).
 
-```bash
-./gradlew build       # compile + test + lint
-./gradlew test        # tests only
-./gradlew ktlintCheck # lint only
-```
+## Contributing / development
+
+Building, testing, lint, binary-compatibility, and the release runbook live in [CONTRIBUTING.md](./CONTRIBUTING.md). Start there if you're working on the SDK itself rather than consuming it.
 
 ## License
 

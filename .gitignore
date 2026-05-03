@@ -312,6 +312,24 @@ _probe/
 .env.*
 !.env.example
 !.env.*.example
+# direnv files — same pattern: real one is ignored, template stays committed
+.envrc
+!.envrc.example
+
+# Signing keys, certificates, and credentials — never commit, anywhere in the tree.
+# Covers: PGP/GPG armored + binary, PEM, raw keys, PKCS#8/12, Java keystores.
+# Add a `!path/to/file.ext` line if you ever legitimately need to commit one
+# (very rare — generally these belong outside the repo, e.g., in ~/.gnupg/).
+*.asc
+*.gpg
+*.pgp
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
 
 # Ignore Gradle build output directory
 build
