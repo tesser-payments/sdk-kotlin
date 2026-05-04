@@ -97,7 +97,7 @@ class StampTest {
 
             val verifier = ECDSASigner().apply { init(false, pubKeyParams) }
             assert(verifier.verifySignature(hash, r, s)) {
-                "Signature failed cryptographic verification — produced sig does not match body+publicKey"
+                "Signature failed cryptographic verification: produced signature does not match body+publicKey"
             }
         }
 }

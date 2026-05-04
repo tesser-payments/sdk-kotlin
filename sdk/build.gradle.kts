@@ -34,7 +34,7 @@ tasks.test {
 }
 
 mavenPublishing {
-    // Sonatype migrated everyone to the Central Portal in 2024 — OSSRH is sunset.
+    // Sonatype migrated everyone to the Central Portal in 2024; OSSRH is sunset.
     // Vanniktech 0.30+ targets the Central Portal directly.
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 
@@ -46,7 +46,7 @@ mavenPublishing {
 
     pom {
         name.set("Tesser Kotlin SDK")
-        description.set("Kotlin SDK for the Tesser API — local signing for Turnkey activity payloads.")
+        description.set("Kotlin SDK for the Tesser API. Produces locally-signed wallet-creation payloads.")
         inceptionYear.set("2026")
         url.set("https://github.com/tesser-payments/sdk-kotlin")
         licenses {

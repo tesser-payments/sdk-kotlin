@@ -11,10 +11,9 @@ import java.net.http.HttpResponse
 /**
  * End-to-end harness for `LocalSigner.signCreateWallet`.
  *
- * Reads required values from environment variables (System.getenv -- no third-party
- * env loader; spec section 10 Open Item 6). Performs an OAuth client_credentials token
- * exchange directly (the SDK does not absorb OAuth in v0.0.1), then signs and
- * submits a wallet-create request against Tesser staging.
+ * Reads configuration from environment variables. Performs an OAuth
+ * `client_credentials` token exchange directly (the SDK does not absorb OAuth),
+ * signs a CreateWallet payload locally, and submits it against Tesser staging.
  *
  * Run:
  *   API_BASE_URL=https://staging.tesser.xyz \
@@ -24,14 +23,14 @@ import java.net.http.HttpResponse
  *   CREATE_WALLET_TYPE=stablecoin_ethereum \
  *   ./gradlew :examples:create-wallet:run
  *
- * AUTH_TOKEN_URL is a separate field per spec section 7.8 — Tesser hosts the OAuth
- * endpoint on a different host than the API base. Ask Tesser support for the exact
- * URL for your environment (sandbox / staging / prod).
+ * `AUTH_TOKEN_URL` is a separate variable from `API_BASE_URL` because Tesser
+ * hosts the OAuth endpoint on a different subdomain. Ask Tesser support for
+ * the URL that matches your environment (sandbox, staging, or production).
  */
 fun main(): Unit = runBlocking {
     val baseUrl = requireEnv("API_BASE_URL")
     val authTokenUrl = requireEnv("AUTH_TOKEN_URL")
-    // Per spec section 7.8: audience defaults to the API base URL if not explicitly set.
+    // The audience defaults to the API base URL if not explicitly set.
     val audience = optionalEnv("API_AUDIENCE") ?: baseUrl
     val clientId = requireEnv("API_CLIENT_ID")
     val clientSecret = requireEnv("API_CLIENT_SECRET")
@@ -41,21 +40,22 @@ fun main(): Unit = runBlocking {
     val walletTypeRaw = requireEnv("CREATE_WALLET_TYPE")
 
     val walletType = WalletType.fromWireValue(walletTypeRaw)
+    val walletName = "SDK Kotlin Wallet ${System.currentTimeMillis()}"
 
     println("Fetching access token from $authTokenUrl (audience=$audience) ...")
     val token = fetchToken(authTokenUrl, clientId, clientSecret, audience)
 
     val signer = LocalSigner(SigningConfig(pubKey, privKey, enclaveId))
-    println("Signing CreateWallet activity for type=$walletType ...")
+    println("Signing CreateWallet activity for type=$walletType name=$walletName ...")
     val signed = signer.signCreateWallet(
-        CreateWalletParams(name = "SDK verification wallet (kotlin)", type = walletType),
+        CreateWalletParams(name = walletName, type = walletType),
     )
 
     println("Submitting to $baseUrl/v1/accounts/wallets ...")
     val responseBody = postJson(
         url = "$baseUrl/v1/accounts/wallets",
         bearer = token,
-        body = """{"signature":"${signed.signature}","name":"SDK verification wallet (kotlin)","type":"$walletTypeRaw","is_managed":true}""",
+        body = """{"signature":"${signed.signature}","name":"$walletName","type":"$walletTypeRaw","is_managed":true}""",
     )
     println("Wallet created. Response: $responseBody")
 }
@@ -89,7 +89,7 @@ private fun fetchToken(
     check(resp.statusCode() in 200..299) {
         "OAuth token exchange failed: ${resp.statusCode()} ${resp.body()}"
     }
-    // Naive JSON parse — production code should use kotlinx.serialization.
+    // Naive JSON parse. Production code should use kotlinx.serialization.
     // The token endpoint returns {"access_token":"...","token_type":"Bearer",...}.
     val tokenRegex = Regex("\"access_token\"\\s*:\\s*\"([^\"]+)\"")
     return tokenRegex.find(resp.body())?.groupValues?.get(1)

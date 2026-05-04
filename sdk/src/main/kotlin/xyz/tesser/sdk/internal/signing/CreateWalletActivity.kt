@@ -13,10 +13,10 @@ import xyz.tesser.sdk.error.TesserError
 import java.util.Base64
 
 /**
- * Builds a Turnkey `ACTIVITY_TYPE_CREATE_WALLET` payload, stamps it, and returns
- * the composite `base64({body, stamp})` signature consumed by Tesser's API.
+ * Builds an `ACTIVITY_TYPE_CREATE_WALLET` payload, stamps it, and returns the
+ * composite `base64({body, stamp})` signature consumed by Tesser's API.
  *
- * Internal-use entry point — public callers go through [xyz.tesser.sdk.LocalSigner].
+ * Internal-use entry point. Public callers go through [xyz.tesser.sdk.LocalSigner].
  *
  * @param stamp Injected for testability; production calls pass [Stamp.create].
  */

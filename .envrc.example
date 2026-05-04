@@ -9,7 +9,7 @@
 # vars below. No more `set -a && source ...` dance before running gradle.
 
 # --- Sonatype Central Portal credentials ---
-# Get from: https://central.sonatype.com/account → "User Tokens"
+# Get from https://central.sonatype.com/account, under "User Tokens".
 export ORG_GRADLE_PROJECT_mavenCentralUsername=""
 export ORG_GRADLE_PROJECT_mavenCentralPassword=""
 
@@ -18,7 +18,7 @@ export ORG_GRADLE_PROJECT_mavenCentralPassword=""
 # Export with:        gpg --export-secret-keys --armor <key-id> > ~/.gnupg/tesser-sdk-signing.asc
 # Public half must be published: gpg --send-keys <key-id>
 #
-# direnv handles the multi-line PEM block natively via $(cat ...) — no escape
+# direnv handles the multi-line PEM block natively via $(cat ...). No escape
 # dance needed. Point this at wherever you saved the exported key.
 export ORG_GRADLE_PROJECT_signingInMemoryKey="$(cat ~/.gnupg/tesser-sdk-signing.asc 2>/dev/null)"
 export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword=""   # empty if you generated without a passphrase

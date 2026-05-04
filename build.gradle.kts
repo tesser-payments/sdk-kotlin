@@ -7,10 +7,10 @@ plugins {
   alias(libs.plugins.binary.compatibility.validator) apply false
 }
 
+// `group` and `version` are declared in `gradle.properties` so the release
+// workflow can read them with a shell one-liner. Gradle automatically applies
+// them to every project in the build.
 allprojects {
-  group = "xyz.tesser"
-  version = "0.0.1-SNAPSHOT"
-
   repositories {
     mavenCentral()
   }
