@@ -4,6 +4,11 @@ End-to-end reference scripts that double as manual verification harnesses
 against Tesser staging. If you can run an example and it succeeds, the SDK is
 wired correctly on your machine.
 
+| Example | Exercises | Status |
+|---|---|---|
+| [`create-wallet`](./create-wallet) | `LocalSigner.signCreateWallet` end-to-end against `POST /v1/accounts/wallets`. | Stable. |
+| [`sign-rebalance-step`](./sign-rebalance-step) | The full rebalance signing flow: create a rebalance, receive the `step.signature_requested` webhook, sign with `LocalSigner.signStep`, submit to `POST /v1/treasury/rebalances/{transferId}/steps/{stepId}/sign`. | Functional. End-to-end against staging once you have a tunnel + webhook subscription. Webhook signature verification is intentionally skipped pending the staging probe that captures the verification algorithm. |
+
 ---
 
 ## `create-wallet`
