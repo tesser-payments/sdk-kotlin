@@ -1,6 +1,8 @@
 package xyz.tesser.sdk.internal.signing
 
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import xyz.tesser.sdk.WalletType
@@ -10,7 +12,7 @@ class WalletTypeAccountsTest {
     fun `every WalletType has at least one account spec`() {
         WalletType.entries.forEach { wt ->
             val specs = WALLET_TYPE_ACCOUNTS[wt]
-            assert(specs != null && specs.isNotEmpty()) { "Missing account spec for $wt" }
+            specs.shouldNotBeNull().shouldNotBeEmpty()
         }
     }
 

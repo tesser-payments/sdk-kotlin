@@ -1,6 +1,8 @@
 package xyz.tesser.sdk.internal.signing
 
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldMatch
 import kotlinx.coroutines.test.runTest
@@ -49,7 +51,8 @@ class StampTest {
             val sigHex = obj["signature"]!!.jsonPrimitive.content
             sigHex shouldMatch Regex("^[0-9a-f]+$")
             // P-256 DER ECDSA signatures are 138–144 hex chars (69–72 bytes) in practice.
-            assert(sigHex.length in 138..144) { "Unexpected DER signature length: ${sigHex.length}" }
+            sigHex.length shouldBeGreaterThanOrEqual 138
+            sigHex.length shouldBeLessThanOrEqual 144
         }
 
     @Test
@@ -96,8 +99,6 @@ class StampTest {
             val pubKeyParams = ECPublicKeyParameters(q, domain)
 
             val verifier = ECDSASigner().apply { init(false, pubKeyParams) }
-            assert(verifier.verifySignature(hash, r, s)) {
-                "Signature failed cryptographic verification: produced signature does not match body+publicKey"
-            }
+            verifier.verifySignature(hash, r, s) shouldBe true
         }
 }

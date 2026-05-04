@@ -65,8 +65,8 @@ mavenPublishing {
         }
         scm {
             url.set("https://github.com/tesser-payments/sdk-kotlin")
-            connection.set("scm:git:git://github.com/tesser-payments/sdk-kotlin.git")
-            developerConnection.set("scm:git:ssh://github.com/tesser-payments/sdk-kotlin.git")
+            connection.set("scm:git:https://github.com/tesser-payments/sdk-kotlin.git")
+            developerConnection.set("scm:git:ssh://git@github.com/tesser-payments/sdk-kotlin.git")
         }
     }
 }
