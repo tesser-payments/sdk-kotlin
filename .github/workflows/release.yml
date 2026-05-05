@@ -68,7 +68,12 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
-        run: ./gradlew :sdk:publishAndReleaseToMavenCentral --no-daemon --stacktrace
+        # `--no-configuration-cache` is required: Vanniktech's
+        # SonatypeRepositoryBuildService injects `BuildFeatures` at execution
+        # time, which Gradle's configuration cache refuses to serialize
+        # (UnknownServiceException). The rest of the build keeps the cache on
+        # via gradle.properties — only the publish step opts out.
+        run: ./gradlew :sdk:publishAndReleaseToMavenCentral --no-daemon --no-configuration-cache --stacktrace
 
       - name: Tag the release and create a GitHub release
         env:

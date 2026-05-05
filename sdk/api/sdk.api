@@ -15,6 +15,12 @@ public final class xyz/tesser/sdk/LocalSigner {
 	public fun <init> (Lxyz/tesser/sdk/SigningConfig;)V
 	public final fun getSigning ()Lxyz/tesser/sdk/SigningConfig;
 	public final fun signCreateWallet (Lxyz/tesser/sdk/CreateWalletParams;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun signStep (Lxyz/tesser/sdk/StepForSigning;Lxyz/tesser/sdk/SignStepOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun signStep$default (Lxyz/tesser/sdk/LocalSigner;Lxyz/tesser/sdk/StepForSigning;Lxyz/tesser/sdk/SignStepOptions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class xyz/tesser/sdk/SignStepOptions {
+	public fun <init> ()V
 }
 
 public final class xyz/tesser/sdk/SignedResult {
@@ -45,6 +51,36 @@ public final class xyz/tesser/sdk/SignedResultMetadata {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class xyz/tesser/sdk/SignedStepResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lxyz/tesser/sdk/SignedStepResultMetadata;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lxyz/tesser/sdk/SignedStepResultMetadata;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lxyz/tesser/sdk/SignedStepResultMetadata;)Lxyz/tesser/sdk/SignedStepResult;
+	public static synthetic fun copy$default (Lxyz/tesser/sdk/SignedStepResult;Ljava/lang/String;Ljava/lang/String;Lxyz/tesser/sdk/SignedStepResultMetadata;ILjava/lang/Object;)Lxyz/tesser/sdk/SignedStepResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMetadata ()Lxyz/tesser/sdk/SignedStepResultMetadata;
+	public final fun getSignature ()Ljava/lang/String;
+	public final fun getUnsignedTransaction ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class xyz/tesser/sdk/SignedStepResultMetadata {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lxyz/tesser/sdk/SignedStepResultMetadata;
+	public static synthetic fun copy$default (Lxyz/tesser/sdk/SignedStepResultMetadata;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lxyz/tesser/sdk/SignedStepResultMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBody ()Ljava/lang/String;
+	public final fun getStampHeaderName ()Ljava/lang/String;
+	public final fun getStampHeaderValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class xyz/tesser/sdk/SigningConfig {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -56,6 +92,25 @@ public final class xyz/tesser/sdk/SigningConfig {
 	public final fun getEnclaveId ()Ljava/lang/String;
 	public final fun getPrivateKey ()Ljava/lang/String;
 	public final fun getPublicKey ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class xyz/tesser/sdk/StepForSigning {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lxyz/tesser/sdk/StepForSigning;
+	public static synthetic fun copy$default (Lxyz/tesser/sdk/StepForSigning;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lxyz/tesser/sdk/StepForSigning;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getNetwork ()Ljava/lang/String;
+	public final fun getSignWith ()Ljava/lang/String;
+	public final fun getTransferId ()Ljava/lang/String;
+	public final fun getUnsignedTransaction ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

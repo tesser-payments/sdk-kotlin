@@ -1,8 +1,8 @@
 # Tesser Kotlin SDK
 
 Kotlin SDK for the [Tesser API](https://docs.tesser.xyz). Produces locally-signed
-wallet-creation payloads ready to submit to the Tesser API. Targets JVM 17+ and
-Kotlin 2.0+.
+payloads (wallet creation, rebalance step signing) ready to submit to the
+Tesser API. Targets JVM 17+ and Kotlin 2.0+.
 
 ## Install
 
@@ -10,7 +10,7 @@ Kotlin 2.0+.
 
 ```kotlin
 dependencies {
-    implementation("xyz.tesser:sdk:0.0.1")
+    implementation("xyz.tesser:sdk:0.0.2")
 }
 ```
 
@@ -20,7 +20,7 @@ dependencies {
 <dependency>
     <groupId>xyz.tesser</groupId>
     <artifactId>sdk</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 
@@ -57,16 +57,20 @@ fun main() = runBlocking {
 }
 ```
 
-For a runnable end-to-end script that performs the OAuth handshake and submits
-the request against Tesser staging, see [`examples/create-wallet`](./examples/create-wallet).
-The [examples README](./examples/README.md) walks through env setup and
-troubleshooting.
+For runnable end-to-end scripts, see [`examples/create-wallet`](./examples/create-wallet)
+(wallet creation) and [`examples/sign-rebalance-step`](./examples/sign-rebalance-step)
+(rebalance step signing via webhook). Each example's README walks through env
+setup, the runtime sequence, and troubleshooting.
 
 ## What's included
 
 - `LocalSigner.signCreateWallet(...)` builds and signs an
   `ACTIVITY_TYPE_CREATE_WALLET` payload locally. No network calls; the private
   key never leaves the JVM.
+- `LocalSigner.signStep(...)` signs the unsigned transaction bytes that the
+  Tesser API delivers via a `step.signature_requested` webhook event. The
+  resulting signature is the value submitted back to
+  `POST /v1/treasury/rebalances/{transferId}/steps/{stepId}/sign`.
 - Three wallet types: `STABLECOIN_ETHEREUM`, `STABLECOIN_SOLANA`, and
   `STABLECOIN_STELLAR`. Ethereum is exercised end-to-end against Tesser
   staging. Solana and Stellar are not yet verified against the live API.

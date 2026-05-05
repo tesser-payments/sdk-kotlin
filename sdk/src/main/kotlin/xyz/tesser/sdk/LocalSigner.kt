@@ -2,6 +2,7 @@ package xyz.tesser.sdk
 
 import xyz.tesser.sdk.internal.signing.Stamp
 import xyz.tesser.sdk.internal.signing.signCreateWalletInternal
+import xyz.tesser.sdk.internal.signing.signStepInternal
 import xyz.tesser.sdk.internal.util.logger
 
 /**
@@ -48,6 +49,27 @@ public class LocalSigner internal constructor(
      *   stamper fails (malformed key, OS crypto provider error, etc.).
      */
     public suspend fun signCreateWallet(params: CreateWalletParams): SignedResult = signCreateWalletInternal(signing, params, stamp)
+
+    /**
+     * Build and stamp an `ACTIVITY_TYPE_SIGN_TRANSACTION_V2` payload for a
+     * rebalance step.
+     *
+     * The returned [SignedStepResult.signature] is the exact value to pass
+     * into the Tesser API's `/sign` request body for that step:
+     * `POST /v1/treasury/rebalances/{transferId}/steps/{stepId}/sign` with
+     * body `{"signature": result.signature}`. No HTTP is performed; this is a
+     * pure compute call. Tesser forwards the activity to Turnkey on the
+     * caller's behalf.
+     *
+     * @throws xyz.tesser.sdk.error.TesserError.ConfigError if [StepForSigning.network]
+     *   is not a supported network identifier.
+     * @throws xyz.tesser.sdk.error.TesserError.SigningError if the underlying
+     *   stamper fails (malformed key, OS crypto provider error, etc.).
+     */
+    public suspend fun signStep(
+        step: StepForSigning,
+        opts: SignStepOptions = SignStepOptions(),
+    ): SignedStepResult = signStepInternal(signing, step, opts, stamp)
 
     private companion object {
         private val log = logger("xyz.tesser.sdk.LocalSigner")
