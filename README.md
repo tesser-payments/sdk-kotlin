@@ -58,9 +58,12 @@ fun main() = runBlocking {
 ```
 
 For runnable end-to-end scripts, see [`examples/create-wallet`](./examples/create-wallet)
-(wallet creation) and [`examples/sign-rebalance-step`](./examples/sign-rebalance-step)
-(rebalance step signing via webhook). Each example's README walks through env
-setup, the runtime sequence, and troubleshooting.
+(wallet creation), [`examples/sign-rebalance-step-webhooks`](./examples/sign-rebalance-step-webhooks)
+(rebalance step signing driven by Tesser webhooks), and
+[`examples/sign-rebalance-step-polling`](./examples/sign-rebalance-step-polling)
+(same flow, polling-based — use this while webhook delivery is unreliable).
+Each example's README walks through env setup, the runtime sequence, and
+troubleshooting.
 
 ## What's included
 

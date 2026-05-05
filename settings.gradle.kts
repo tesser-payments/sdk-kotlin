@@ -7,4 +7,5 @@ rootProject.name = "tesser-sdk-kotlin"
 
 include(":sdk")
 include(":examples:create-wallet")
-include(":examples:sign-rebalance-step")
+include(":examples:sign-rebalance-step-webhooks")
+include(":examples:sign-rebalance-step-polling")

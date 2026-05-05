@@ -7,7 +7,8 @@ wired correctly on your machine.
 | Example | Exercises | Status |
 |---|---|---|
 | [`create-wallet`](./create-wallet) | `LocalSigner.signCreateWallet` end-to-end against `POST /v1/accounts/wallets`. | Stable. |
-| [`sign-rebalance-step`](./sign-rebalance-step) | The full rebalance signing flow: create a rebalance, receive the `step.signature_requested` webhook, sign with `LocalSigner.signStep`, submit to `POST /v1/treasury/rebalances/{transferId}/steps/{stepId}/sign`. | Functional. End-to-end against staging once you have a tunnel + webhook subscription. Webhook signature verification is intentionally skipped pending the staging probe that captures the verification algorithm. |
+| [`sign-rebalance-step-webhooks`](./sign-rebalance-step-webhooks) | The full rebalance signing flow driven by Tesser webhooks: create a rebalance, receive the `step.signature_requested` and `step.completed` events, sign with `LocalSigner.signStep`, submit to `POST /v1/treasury/rebalances/{transferId}/steps/{stepId}/sign`. | Functional, but webhook delivery from Tesser staging is currently unreliable. Webhook signature verification is intentionally skipped pending the staging probe that captures the verification algorithm. |
+| [`sign-rebalance-step-polling`](./sign-rebalance-step-polling) | Same rebalance signing flow as the webhooks variant but polls `GET /v1/treasury/rebalances/{id}` instead of waiting for webhook events. No tunnel, no webhook subscription. | Recommended workaround while webhook delivery is unreliable. |
 
 ---
 
