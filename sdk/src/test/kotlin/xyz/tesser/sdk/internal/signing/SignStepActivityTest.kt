@@ -15,6 +15,7 @@ import xyz.tesser.sdk.SignStepOptions
 import xyz.tesser.sdk.SigningConfig
 import xyz.tesser.sdk.StepForSigning
 import xyz.tesser.sdk.error.TesserError
+import java.util.Base64
 
 class SignStepActivityTest {
     private val cfg =
@@ -42,13 +43,8 @@ class SignStepActivityTest {
                 )
         }
 
-    private fun stubTurnkey(signedTx: String = "0xdeadbeef"): TurnkeyClient =
-        mockk<TurnkeyClient>().also {
-            coEvery { it.signTransaction(any(), any()) } returns signedTx
-        }
-
     @Test
-    fun `stamps the Turnkey activity body, not the raw unsigned transaction`() =
+    fun `stamps a Turnkey ACTIVITY_TYPE_SIGN_TRANSACTION_V2 body`() =
         runTest {
             val bodySlot = slot<String>()
             val stamp =
@@ -56,7 +52,7 @@ class SignStepActivityTest {
                     coEvery { it.stamp(any(), capture(bodySlot)) } returns
                         StampResult("X-Stamp", "STAMP_VALUE")
                 }
-            signStepInternal(cfg, step, SignStepOptions(), stamp, stubTurnkey())
+            signStepInternal(cfg, step, SignStepOptions(), stamp)
 
             val stampedBody = Json.parseToJsonElement(bodySlot.captured).jsonObject
             stampedBody["type"]!!.jsonPrimitive.content shouldBe "ACTIVITY_TYPE_SIGN_TRANSACTION_V2"
@@ -68,44 +64,29 @@ class SignStepActivityTest {
         }
 
     @Test
-    fun `forwards the stamped body and stamp header to Turnkey`() =
+    fun `returns a base64 composite signature containing body and stamp`() =
         runTest {
-            val bodySlot = slot<String>()
-            val stampSlot = slot<StampResult>()
-            val turnkey =
-                mockk<TurnkeyClient>().also {
-                    coEvery { it.signTransaction(capture(bodySlot), capture(stampSlot)) } returns "0xabc"
-                }
-            signStepInternal(cfg, step, SignStepOptions(), stubStamp(), turnkey)
-
-            bodySlot.captured shouldContain "ACTIVITY_TYPE_SIGN_TRANSACTION_V2"
-            bodySlot.captured shouldContain step.unsignedTransaction
-            stampSlot.captured.stampHeaderName shouldBe "X-Stamp"
-            stampSlot.captured.stampHeaderValue shouldBe "FAKE_STAMP_VALUE"
-        }
-
-    @Test
-    fun `returns the Turnkey signed transaction as the signature`() =
-        runTest {
-            val result =
-                signStepInternal(cfg, step, SignStepOptions(), stubStamp(), stubTurnkey("0xfeedface"))
-            result.signature shouldBe "0xfeedface"
+            val result = signStepInternal(cfg, step, SignStepOptions(), stubStamp())
+            val decoded = String(Base64.getDecoder().decode(result.signature))
+            val composite = Json.parseToJsonElement(decoded).jsonObject
+            composite["stamp"]!!.jsonPrimitive.content shouldBe "FAKE_STAMP_VALUE"
+            val innerBody = Json.parseToJsonElement(composite["body"]!!.jsonPrimitive.content).jsonObject
+            innerBody["type"]!!.jsonPrimitive.content shouldBe "ACTIVITY_TYPE_SIGN_TRANSACTION_V2"
         }
 
     @Test
     fun `echoes the unsignedTransaction on the result`() =
         runTest {
-            val result = signStepInternal(cfg, step, SignStepOptions(), stubStamp(), stubTurnkey())
+            val result = signStepInternal(cfg, step, SignStepOptions(), stubStamp())
             result.unsignedTransaction shouldBe step.unsignedTransaction
         }
 
     @Test
     fun `metadata threads through stamp header values and the stamped body`() =
         runTest {
-            val result = signStepInternal(cfg, step, SignStepOptions(), stubStamp(), stubTurnkey())
+            val result = signStepInternal(cfg, step, SignStepOptions(), stubStamp())
             result.metadata.stampHeaderName shouldBe "X-Stamp"
             result.metadata.stampHeaderValue shouldBe "FAKE_STAMP_VALUE"
-            // body in metadata is the Turnkey activity, not the raw unsigned tx
             result.metadata.body shouldContain "ACTIVITY_TYPE_SIGN_TRANSACTION_V2"
             result.metadata.body shouldContain step.unsignedTransaction
         }
@@ -116,7 +97,7 @@ class SignStepActivityTest {
             val solanaStep =
                 step.copy(
                     network = "SOLANA",
-                    signWith = "9wXn6...solBase58Address",
+                    signWith = "9wXn6solBase58Address",
                 )
             val bodySlot = slot<String>()
             val stamp =
@@ -124,17 +105,17 @@ class SignStepActivityTest {
                     coEvery { it.stamp(any(), capture(bodySlot)) } returns
                         StampResult("X-Stamp", "STAMP_VALUE")
                 }
-            signStepInternal(cfg, solanaStep, SignStepOptions(), stamp, stubTurnkey())
+            signStepInternal(cfg, solanaStep, SignStepOptions(), stamp)
             val params = Json.parseToJsonElement(bodySlot.captured).jsonObject["parameters"]!!.jsonObject
             params["type"]!!.jsonPrimitive.content shouldBe "TRANSACTION_TYPE_SOLANA"
         }
 
     @Test
-    fun `unknown network throws ConfigError before any stamping or HTTP`() =
+    fun `unknown network throws ConfigError before any stamping`() =
         runTest {
             val unknownNet = step.copy(network = "MARS_TESTNET")
             shouldThrow<TesserError.ConfigError> {
-                signStepInternal(cfg, unknownNet, SignStepOptions(), stubStamp(), stubTurnkey())
+                signStepInternal(cfg, unknownNet, SignStepOptions(), stubStamp())
             }
         }
 }

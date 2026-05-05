@@ -5,10 +5,13 @@ import io.kotest.matchers.string.shouldContain
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 import xyz.tesser.sdk.internal.signing.Stamp
 import xyz.tesser.sdk.internal.signing.StampResult
-import xyz.tesser.sdk.internal.signing.TurnkeyClient
+import java.util.Base64
 
 class LocalSignerStepTest {
     private val cfg =
@@ -32,34 +35,31 @@ class LocalSignerStepTest {
             coEvery { it.stamp(any(), any()) } returns StampResult("X-Stamp", "STAMP_VALUE")
         }
 
-    private fun stubTurnkey(signedTx: String = "0xfeedface"): TurnkeyClient =
-        mockk<TurnkeyClient>().also {
-            coEvery { it.signTransaction(any(), any()) } returns signedTx
-        }
-
     @Test
-    fun `signStep returns the Turnkey signed transaction as the signature`() =
+    fun `signStep returns a non-empty base64 signature`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp(), stubTurnkey("0xabc123"))
+            val signer = LocalSigner(cfg, stubStamp())
             val result = signer.signStep(step)
-            result.signature shouldBe "0xabc123"
+            result.signature.isNotBlank() shouldBe true
             result.metadata.stampHeaderValue shouldBe "STAMP_VALUE"
         }
 
     @Test
-    fun `signStep stamps a Turnkey ACTIVITY_TYPE_SIGN_TRANSACTION_V2 body`() =
+    fun `signStep payload body is a Turnkey activity referencing the unsigned transaction and signWith`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp(), stubTurnkey())
+            val signer = LocalSigner(cfg, stubStamp())
             val result = signer.signStep(step)
-            result.metadata.body shouldContain "ACTIVITY_TYPE_SIGN_TRANSACTION_V2"
-            result.metadata.body shouldContain step.unsignedTransaction
-            result.metadata.body shouldContain step.signWith
+            val composite = String(Base64.getDecoder().decode(result.signature))
+            val body = Json.parseToJsonElement(composite).jsonObject["body"]!!.jsonPrimitive.content
+            body shouldContain "ACTIVITY_TYPE_SIGN_TRANSACTION_V2"
+            body shouldContain step.unsignedTransaction
+            body shouldContain step.signWith
         }
 
     @Test
     fun `signStep echoes the unsignedTransaction back on the result`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp(), stubTurnkey())
+            val signer = LocalSigner(cfg, stubStamp())
             val result = signer.signStep(step)
             result.unsignedTransaction shouldBe step.unsignedTransaction
         }
@@ -67,7 +67,7 @@ class LocalSignerStepTest {
     @Test
     fun `signStep accepts default SignStepOptions`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp(), stubTurnkey())
+            val signer = LocalSigner(cfg, stubStamp())
             // No `opts` argument; default ctor should be used.
             signer.signStep(step)
         }

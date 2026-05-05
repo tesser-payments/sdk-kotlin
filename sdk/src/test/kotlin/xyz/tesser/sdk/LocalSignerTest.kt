@@ -12,7 +12,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 import xyz.tesser.sdk.internal.signing.Stamp
 import xyz.tesser.sdk.internal.signing.StampResult
-import xyz.tesser.sdk.internal.signing.TurnkeyClient
 import java.util.Base64
 
 class LocalSignerTest {
@@ -27,11 +26,6 @@ class LocalSignerTest {
         mockk<Stamp>().also {
             coEvery { it.stamp(any(), any()) } returns StampResult("X-Stamp", "STAMP_VALUE")
         }
-
-    // signCreateWallet doesn't touch Turnkey, but the LocalSigner constructor
-    // still requires a TurnkeyClient — relaxed mock keeps these tests focused
-    // on the create-wallet path.
-    private fun unusedTurnkey(): TurnkeyClient = mockk(relaxed = true)
 
     @Test
     fun `constructor accepts a fully-populated SigningConfig`() {
@@ -62,7 +56,7 @@ class LocalSignerTest {
     @Test
     fun `signCreateWallet returns a SignedResult with a non-empty signature`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp(), unusedTurnkey())
+            val signer = LocalSigner(cfg, stamp = stubStamp())
             val result =
                 signer.signCreateWallet(
                     CreateWalletParams("my wallet", WalletType.STABLECOIN_ETHEREUM),
@@ -74,7 +68,7 @@ class LocalSignerTest {
     @Test
     fun `signCreateWallet payload includes the wallet name verbatim`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp(), unusedTurnkey())
+            val signer = LocalSigner(cfg, stamp = stubStamp())
             val result =
                 signer.signCreateWallet(
                     CreateWalletParams("verbatim-name-123", WalletType.STABLECOIN_ETHEREUM),
@@ -87,7 +81,7 @@ class LocalSignerTest {
     @Test
     fun `signCreateWallet for Solana uses ed25519 curve in payload`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp(), unusedTurnkey())
+            val signer = LocalSigner(cfg, stamp = stubStamp())
             val result =
                 signer.signCreateWallet(
                     CreateWalletParams("sol", WalletType.STABLECOIN_SOLANA),

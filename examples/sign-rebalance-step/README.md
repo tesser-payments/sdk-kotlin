@@ -55,7 +55,7 @@ set -a && source examples/sign-rebalance-step/.env.local && set +a
 
 ## Expected output
 
-```
+```text
 Signer ready for enclave=org_...
 Starting webhook listener on http://0.0.0.0:8787/webhook
 Public URL the Tesser dashboard should POST to: https://....trycloudflare.com/webhook

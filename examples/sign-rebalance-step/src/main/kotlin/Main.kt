@@ -1,17 +1,14 @@
 import com.sun.net.httpserver.HttpServer
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 import xyz.tesser.sdk.LocalSigner
 import xyz.tesser.sdk.SignedStepResult
 import xyz.tesser.sdk.SigningConfig
@@ -22,8 +19,6 @@ import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.time.Instant
-import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -33,29 +28,24 @@ import kotlin.time.Duration.Companion.seconds
  *
  * Flow:
  *   1. Authenticate via OAuth `client_credentials` against `AUTH_TOKEN_URL`.
- *   2. Start a local HTTP server on `WEBHOOK_PORT`. NOTE: real webhook delivery
- *      from Tesser is currently broken on the API side, so this example
- *      self-delivers a synthetic `step.signature_requested` event (see step 4).
- *      The listener and channel plumbing are kept intact so this code reverts
- *      cleanly once upstream webhook delivery is fixed.
+ *   2. Start a local HTTP server on `WEBHOOK_PORT` to receive Tesser webhook
+ *      callbacks. The handler accepts POSTs at any path so the same listener
+ *      works behind cloudflared, ngrok, localhost.run, whcli, etc. without
+ *      caring about path-rewriting. Register the tunnel's public URL in the
+ *      Tesser dashboard subscribed to the `step.signature_requested` and
+ *      `step.completed` events.
  *   3. POST `/v1/treasury/rebalances` with the rebalance request body built
  *      from env.
- *   4. Poll `GET /v1/treasury/rebalances/{id}` until the API populates
- *      `unsigned_transaction` on the first step, then build a synthetic
- *      `step.signature_requested` envelope from that real step data and POST
- *      it to the local listener.
+ *   4. Wait for the `step.signature_requested` webhook event.
  *   5. Sign the step locally with `LocalSigner.signStep`.
  *   6. POST the signature to `/v1/treasury/rebalances/{id}/steps/{stepId}/sign`.
- *   7. Poll the rebalance until the last step's `completed_at` is set (or
- *      throw if any step reports `failed_at`).
- *   8. Print the final rebalance summary and shut down.
+ *   7. Wait for the `step.completed` webhook event.
+ *   8. Print the final step summary (using `finalized_at`) and shut down.
  *
  * Run:
  *   cp .env.example .env.local && $EDITOR .env.local
  *   set -a && source .env.local && set +a
  *   ./gradlew :examples:sign-rebalance-step:run
- *
- * No tunnel or webhook registration is required while in self-delivery mode.
  *
  * Webhook signature verification is intentionally not implemented yet (the
  * verification algorithm hasn't been documented in the public Tesser docs at
@@ -71,8 +61,10 @@ fun main(): Unit =
         WebhookListener.start(config.webhookPort).use { listener ->
             val token = fetchAccessToken(config)
             val rebalanceId = createRebalance(config, token)
-            val event = awaitSignatureRequestEvent(config, token, rebalanceId, listener)
-            val step = buildStepForSigning(config, token, event)
+
+            println("Waiting for `step.signature_requested` event for rebalance $rebalanceId ...")
+            val signatureRequested = listener.awaitEventOfType("step.signature_requested")
+            val step = buildStepForSigning(config, token, signatureRequested)
 
             println(
                 "Signing step ${step.id} for transfer ${step.transferId} " +
@@ -83,9 +75,9 @@ fun main(): Unit =
 
             submitSignature(config, token, step, signed)
 
-            println("Polling rebalance until the last step's completed_at is set ...")
-            val finalRebalance = pollUntilLastStepCompleted(config.tesserBaseUrl, token, rebalanceId)
-            printFinalRebalance(finalRebalance)
+            println("Waiting for `step.completed` event ...")
+            val completed = listener.awaitEventOfType("step.completed", timeout = 5.minutes)
+            printCompletedStep(completed)
         }
     }
 
@@ -152,14 +144,35 @@ private data class RebalanceParams(
 // Webhook listener
 // =============================================================================
 
+/**
+ * Buffers incoming webhook envelopes onto an unbounded channel so callers can
+ * pull events by `type` in arrival order. Unbounded so events that arrive
+ * between awaits (e.g., `step.submitted` and `step.confirmed` while we're
+ * waiting for `step.completed`) aren't dropped.
+ */
 private class WebhookListener private constructor(
     val port: Int,
     private val server: HttpServer,
     private val events: Channel<JsonObject>,
 ) : AutoCloseable {
-    val webhookUrl: String get() = "http://localhost:$port/webhook"
-
-    suspend fun awaitNextEvent(timeout: Duration = 60.seconds): JsonObject = withTimeout(timeout) { events.receive() }
+    /**
+     * Receive events from the channel, discarding any whose `type` doesn't
+     * match. Throws if the timeout elapses before a matching event arrives.
+     */
+    suspend fun awaitEventOfType(
+        type: String,
+        timeout: Duration = 60.seconds,
+    ): JsonObject =
+        withTimeout(timeout) {
+            while (true) {
+                val envelope = events.receive()
+                val received = envelope["type"]?.jsonPrimitive?.content
+                if (received == type) return@withTimeout envelope
+                println("  (skipping webhook event type=$received id=${envelope["id"]?.jsonPrimitive?.content})")
+            }
+            @Suppress("UNREACHABLE_CODE")
+            error("unreachable")
+        }
 
     override fun close() {
         server.stop(0)
@@ -168,29 +181,44 @@ private class WebhookListener private constructor(
 
     companion object {
         fun start(port: Int): WebhookListener {
-            val events = Channel<JsonObject>(capacity = 1)
+            val events = Channel<JsonObject>(capacity = Channel.UNLIMITED)
             val server = HttpServer.create(InetSocketAddress(port), 0)
-            server.createContext("/webhook") { exchange ->
+            // Register at "/" so any incoming path works (whcli, ngrok, and
+            // similar tunnels typically forward to the bare target URL with no
+            // extra path component). HttpServer routes by longest-prefix
+            // match — without other contexts, every request lands here.
+            server.createContext("/") { exchange ->
+                val method = exchange.requestMethod
+                val path = exchange.requestURI.path
                 try {
+                    if (method != "POST") {
+                        // Reject non-POST quietly so health checks / browser
+                        // visits don't crash the parser.
+                        println("  webhook received: method=$method path=$path (ignored, expected POST)")
+                        exchange.sendResponseHeaders(405, -1)
+                        return@createContext
+                    }
                     val body = exchange.requestBody.bufferedReader().use { it.readText() }
                     // TODO: verify the webhook signature header before trusting the payload.
                     //   The exact header name and algorithm aren't currently documented in
                     //   the public Tesser docs; until verification lands, this handler accepts
                     //   every incoming POST. Do NOT run against production.
                     val envelope = json.parseToJsonElement(body).jsonObject
-                    if (envelope["type"]?.jsonPrimitive?.content == "step.signature_requested") {
-                        events.trySend(envelope)
-                    }
+                    println(
+                        "  webhook received: path=$path type=${envelope["type"]?.jsonPrimitive?.content}" +
+                            " id=${envelope["id"]?.jsonPrimitive?.content}",
+                    )
+                    events.trySend(envelope)
                     exchange.sendResponseHeaders(204, -1)
                 } catch (e: Exception) {
-                    println("Webhook handler error: ${e.message}")
+                    println("Webhook handler error on $method $path: ${e.message}")
                     exchange.sendResponseHeaders(500, -1)
                 } finally {
                     exchange.close()
                 }
             }
             server.start()
-            println("Webhook listener started on http://0.0.0.0:$port/webhook")
+            println("Webhook listener started on http://0.0.0.0:$port/ (any path)")
             return WebhookListener(port, server, events)
         }
     }
@@ -228,40 +256,6 @@ private fun createRebalance(
     return rebalanceId
 }
 
-/**
- * Workaround while upstream webhook delivery is broken: poll the rebalance
- * until `unsigned_transaction` is populated, build a synthetic
- * `step.signature_requested` envelope from that real step data, and self-POST
- * it to the local listener. The listener's handler/channel plumbing is the
- * same it would use for a real Tesser-delivered event, so this reverts
- * cleanly once upstream is fixed.
- */
-private suspend fun awaitSignatureRequestEvent(
-    config: ExampleConfig,
-    token: String,
-    rebalanceId: String,
-    listener: WebhookListener,
-): JsonObject {
-    val populatedStep = pollForUnsignedTransaction(config.tesserBaseUrl, token, rebalanceId)
-    val envelope =
-        buildJsonObject {
-            put("id", "mock_${UUID.randomUUID()}")
-            put("type", "step.signature_requested")
-            put("created_at", Instant.now().toString())
-            putJsonObject("data") {
-                putJsonObject("object") {
-                    populatedStep.forEach { (k, v) -> put(k, v) }
-                }
-            }
-        }.toString()
-
-    println("Self-delivering webhook event to ${listener.webhookUrl}")
-    postLocalWebhook(listener.webhookUrl, envelope)
-    val event = listener.awaitNextEvent()
-    println("Received event: id=${event["id"]?.jsonPrimitive?.content}")
-    return event
-}
-
 private fun buildStepForSigning(
     config: ExampleConfig,
     token: String,
@@ -270,8 +264,12 @@ private fun buildStepForSigning(
     val stepDto =
         event["data"]?.jsonObject?.get("object")?.jsonObject
             ?: error("Webhook event missing data.object: $event")
-    val fromAccountId = stepDto.requireString("from_account_id")
-    val network = stepDto.requireString("from_network")
+    // Use the user-facing account/network we sent on the rebalance request,
+    // not the step DTO's `from_account_id` / `from_network`. The webhook
+    // step's `from_account_id` is Tesser's internal wallet-account id which
+    // doesn't resolve via `GET /v1/accounts/{id}`.
+    val fromAccountId = config.rebalance.fromAccountId
+    val network = config.rebalance.fromNetwork
     val signWith = fetchCryptoWalletAddress(config.tesserBaseUrl, token, fromAccountId)
     return StepForSigning(
         id = stepDto.requireString("id"),
@@ -308,84 +306,15 @@ private fun submitSignature(
     return response
 }
 
-private fun printFinalRebalance(rebalance: JsonObject) {
-    val lastStep = (rebalance["steps"] as JsonArray).last().jsonObject
+private fun printCompletedStep(event: JsonObject) {
+    val stepObject =
+        event["data"]?.jsonObject?.get("object")?.jsonObject
+            ?: error("step.completed event missing data.object: $event")
     println(
-        "Rebalance complete. last_step.id=${lastStep["id"]?.jsonPrimitive?.content}" +
-            " status=${lastStep["status"]?.jsonPrimitive?.content}" +
-            " completed_at=${lastStep["completed_at"]?.jsonPrimitive?.content}",
+        "Rebalance complete. step.id=${stepObject["id"]?.jsonPrimitive?.content}" +
+            " status=${stepObject["status"]?.jsonPrimitive?.content}" +
+            " finalized_at=${stepObject["finalized_at"]?.jsonPrimitive?.content}",
     )
-}
-
-// =============================================================================
-// Polling helpers
-// =============================================================================
-
-/**
- * Poll `GET /v1/treasury/rebalances/{id}` until `data.steps[0].unsigned_transaction`
- * is populated. Workaround while upstream webhook delivery is broken; throws on
- * timeout so the example fails loudly rather than self-POSTing a half-baked event.
- */
-private suspend fun pollForUnsignedTransaction(
-    baseUrl: String,
-    token: String,
-    rebalanceId: String,
-): JsonObject =
-    withTimeout(30.seconds) {
-        while (true) {
-            val rebalance = getRebalanceData(baseUrl, token, rebalanceId)
-            val step = (rebalance["steps"] as? JsonArray)?.firstOrNull()?.jsonObject
-                ?: error("Rebalance has no steps yet: $rebalance")
-            val unsignedTx = step["unsigned_transaction"]?.jsonPrimitive?.contentOrNull
-            if (!unsignedTx.isNullOrBlank()) return@withTimeout step
-            delay(1.seconds)
-        }
-        @Suppress("UNREACHABLE_CODE")
-        error("unreachable")
-    }
-
-/**
- * Poll `GET /v1/treasury/rebalances/{id}` until the last step has a non-null
- * `completed_at`. Throws if any step reports `failed_at` (the rebalance can't
- * recover) or if the timeout elapses with no terminal state.
- */
-private suspend fun pollUntilLastStepCompleted(
-    baseUrl: String,
-    token: String,
-    rebalanceId: String,
-): JsonObject =
-    withTimeout(5.minutes) {
-        var lastReportedStatus: String? = null
-        while (true) {
-            val rebalance = getRebalanceData(baseUrl, token, rebalanceId)
-            val lastStep = (rebalance["steps"] as? JsonArray)?.lastOrNull()?.jsonObject
-                ?: error("Rebalance has no steps: $rebalance")
-            val status = lastStep["status"]?.jsonPrimitive?.contentOrNull
-            val completedAt = lastStep["completed_at"]?.jsonPrimitive?.contentOrNull
-            val failedAt = lastStep["failed_at"]?.jsonPrimitive?.contentOrNull
-            if (status != lastReportedStatus) {
-                println("  last_step status=$status completed_at=$completedAt failed_at=$failedAt")
-                lastReportedStatus = status
-            }
-            if (failedAt != null) {
-                val reasons = lastStep["status_reasons"]?.toString() ?: "[]"
-                error("Step ${lastStep["id"]?.jsonPrimitive?.content} failed_at=$failedAt status_reasons=$reasons")
-            }
-            if (completedAt != null) return@withTimeout rebalance
-            delay(2.seconds)
-        }
-        @Suppress("UNREACHABLE_CODE")
-        error("unreachable")
-    }
-
-private fun getRebalanceData(
-    baseUrl: String,
-    token: String,
-    rebalanceId: String,
-): JsonObject {
-    val response = getJson("$baseUrl/v1/treasury/rebalances/$rebalanceId", token)
-    return json.parseToJsonElement(response).jsonObject["data"]?.jsonObject
-        ?: error("Rebalance GET missing `data` envelope: $response")
 }
 
 // =============================================================================
@@ -484,23 +413,6 @@ private fun postJson(
         "POST $url failed: ${resp.statusCode()} ${resp.body()}"
     }
     return resp.body()
-}
-
-private fun postLocalWebhook(
-    url: String,
-    body: String,
-) {
-    val client = HttpClient.newHttpClient()
-    val request =
-        HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .build()
-    val resp = client.send(request, HttpResponse.BodyHandlers.ofString())
-    check(resp.statusCode() in 200..299) {
-        "Self-delivery to $url failed: ${resp.statusCode()} ${resp.body()}"
-    }
 }
 
 private fun urlEncode(s: String): String = URLEncoder.encode(s, Charsets.UTF_8)

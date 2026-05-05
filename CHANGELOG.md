@@ -7,16 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.0.2] - 2026-05-03
+## [0.0.2] - 2026-05-05
 
 ### Added
-- `LocalSigner.signStep(...)` for producing locally-signed signatures over
-  the unsigned transaction bytes carried by a Tesser rebalance step.
-- Public types: `StepForSigning`, `SignedStepResult`, `SignedStepResultMetadata`,
-  and `SignStepOptions`.
+- `LocalSigner.signStep(...)` for producing a stamped Turnkey
+  `ACTIVITY_TYPE_SIGN_TRANSACTION_V2` payload for a Tesser rebalance step.
+  Returns a `base64({body, stamp})` envelope that drops straight into
+  Tesser's `/sign` request body — same calling pattern as `signCreateWallet`.
+- Public types: `StepForSigning` (carries `id`, `transferId`,
+  `unsignedTransaction`, `signWith`, `network`), `SignedStepResult`,
+  `SignedStepResultMetadata`, and `SignStepOptions`.
 - `examples/sign-rebalance-step` reference script that creates a rebalance,
-  receives the `step.signature_requested` webhook, signs locally, and submits
-  the signature to the Tesser API.
+  signs the step locally, and submits the signature to the Tesser API.
 
 ## [0.0.1] - 2026-05-03
 
