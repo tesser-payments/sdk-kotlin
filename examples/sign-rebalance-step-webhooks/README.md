@@ -1,17 +1,20 @@
-# `sign-rebalance-step` example
+# `sign-rebalance-step-webhooks` example
 
 End-to-end harness that exercises the full Tesser rebalance flow:
 
 1. Authenticate via OAuth `client_credentials`.
-2. Listen on a local webhook endpoint for `step.signature_requested` events.
+2. Listen on a local webhook endpoint for `step.signature_requested` and
+   `step.completed` events.
 3. Create a rebalance via `POST /v1/treasury/rebalances`.
 4. Receive the signing event, sign the step locally with `LocalSigner.signStep`,
    and POST the signature to `/v1/treasury/rebalances/{id}/steps/{stepId}/sign`.
+5. Wait for `step.completed` and report `finalized_at`.
 
-> **Status:** functionally complete. The flow runs end-to-end against staging
-> once your tunnel and webhook subscription are configured.
-> Webhook signature verification is still intentionally skipped pending the
-> staging probe that captures the verification algorithm; do not run this
+> **Status:** webhook delivery from Tesser staging is currently **unreliable**.
+> If you don't see events arrive within the configured timeout, switch to the
+> polling variant in [`../sign-rebalance-step-polling`](../sign-rebalance-step-polling).
+> Webhook signature verification is also still intentionally skipped pending
+> the staging probe that captures the verification algorithm; do not run this
 > against production until that lands.
 
 ---
@@ -29,8 +32,8 @@ Same baseline as [`examples/create-wallet`](../create-wallet/README.md): Java 17
 ## Setup
 
 ```bash
-cp examples/sign-rebalance-step/.env.example examples/sign-rebalance-step/.env.local
-$EDITOR examples/sign-rebalance-step/.env.local
+cp examples/sign-rebalance-step-webhooks/.env.example examples/sign-rebalance-step-webhooks/.env.local
+$EDITOR examples/sign-rebalance-step-webhooks/.env.local
 ```
 
 Fill in:
@@ -49,8 +52,8 @@ Fill in:
 cloudflared tunnel --url http://localhost:8787
 
 # In another terminal:
-set -a && source examples/sign-rebalance-step/.env.local && set +a
-./gradlew :examples:sign-rebalance-step:run
+set -a && source examples/sign-rebalance-step-webhooks/.env.local && set +a
+./gradlew :examples:sign-rebalance-step-webhooks:run
 ```
 
 ## Expected output
