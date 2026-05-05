@@ -1,0 +1,129 @@
+public final class xyz/tesser/sdk/CreateWalletParams {
+	public fun <init> (Ljava/lang/String;Lxyz/tesser/sdk/WalletType;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lxyz/tesser/sdk/WalletType;
+	public final fun copy (Ljava/lang/String;Lxyz/tesser/sdk/WalletType;)Lxyz/tesser/sdk/CreateWalletParams;
+	public static synthetic fun copy$default (Lxyz/tesser/sdk/CreateWalletParams;Ljava/lang/String;Lxyz/tesser/sdk/WalletType;ILjava/lang/Object;)Lxyz/tesser/sdk/CreateWalletParams;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getType ()Lxyz/tesser/sdk/WalletType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class xyz/tesser/sdk/LocalSigner {
+	public fun <init> (Lxyz/tesser/sdk/SigningConfig;)V
+	public final fun getSigning ()Lxyz/tesser/sdk/SigningConfig;
+	public final fun signCreateWallet (Lxyz/tesser/sdk/CreateWalletParams;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class xyz/tesser/sdk/SignedResult {
+	public fun <init> (Ljava/lang/String;Lxyz/tesser/sdk/SignedResultMetadata;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lxyz/tesser/sdk/SignedResultMetadata;
+	public final fun copy (Ljava/lang/String;Lxyz/tesser/sdk/SignedResultMetadata;)Lxyz/tesser/sdk/SignedResult;
+	public static synthetic fun copy$default (Lxyz/tesser/sdk/SignedResult;Ljava/lang/String;Lxyz/tesser/sdk/SignedResultMetadata;ILjava/lang/Object;)Lxyz/tesser/sdk/SignedResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMetadata ()Lxyz/tesser/sdk/SignedResultMetadata;
+	public final fun getSignature ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class xyz/tesser/sdk/SignedResultMetadata {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lxyz/tesser/sdk/SignedResultMetadata;
+	public static synthetic fun copy$default (Lxyz/tesser/sdk/SignedResultMetadata;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lxyz/tesser/sdk/SignedResultMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBody ()Ljava/lang/String;
+	public final fun getStampHeaderName ()Ljava/lang/String;
+	public final fun getStampHeaderValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class xyz/tesser/sdk/SigningConfig {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lxyz/tesser/sdk/SigningConfig;
+	public static synthetic fun copy$default (Lxyz/tesser/sdk/SigningConfig;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lxyz/tesser/sdk/SigningConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnclaveId ()Ljava/lang/String;
+	public final fun getPrivateKey ()Ljava/lang/String;
+	public final fun getPublicKey ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class xyz/tesser/sdk/WalletType : java/lang/Enum {
+	public static final field Companion Lxyz/tesser/sdk/WalletType$Companion;
+	public static final field STABLECOIN_ETHEREUM Lxyz/tesser/sdk/WalletType;
+	public static final field STABLECOIN_SOLANA Lxyz/tesser/sdk/WalletType;
+	public static final field STABLECOIN_STELLAR Lxyz/tesser/sdk/WalletType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lxyz/tesser/sdk/WalletType;
+	public static fun values ()[Lxyz/tesser/sdk/WalletType;
+}
+
+public final class xyz/tesser/sdk/WalletType$Companion {
+	public final fun fromWireValue (Ljava/lang/String;)Lxyz/tesser/sdk/WalletType;
+}
+
+public abstract class xyz/tesser/sdk/error/TesserError : java/lang/Exception {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class xyz/tesser/sdk/error/TesserError$APIError : xyz/tesser/sdk/error/TesserError {
+	public fun <init> (Ljava/lang/String;ILjava/util/Map;Ljava/lang/String;Ljava/util/List;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/util/Map;Ljava/lang/String;Ljava/util/List;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getErrorCode ()Ljava/lang/String;
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getRequestId ()Ljava/lang/String;
+	public final fun getStatus ()I
+	public final fun hasCode ([Ljava/lang/String;)Z
+}
+
+public final class xyz/tesser/sdk/error/TesserError$ConfigError : xyz/tesser/sdk/error/TesserError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class xyz/tesser/sdk/error/TesserError$ConnectionError : xyz/tesser/sdk/error/TesserError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class xyz/tesser/sdk/error/TesserError$SigningError : xyz/tesser/sdk/error/TesserError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class xyz/tesser/sdk/error/TesserError$TimeoutError : xyz/tesser/sdk/error/TesserError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class xyz/tesser/sdk/error/TesserErrorDetail {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lxyz/tesser/sdk/error/TesserErrorDetail;
+	public static synthetic fun copy$default (Lxyz/tesser/sdk/error/TesserErrorDetail;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lxyz/tesser/sdk/error/TesserErrorDetail;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrorCode ()Ljava/lang/String;
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public final fun getUiMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

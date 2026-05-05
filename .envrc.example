@@ -1,0 +1,31 @@
+# direnv config for the Tesser Kotlin SDK repo.
+#
+# Copy this file to `.envrc` (gitignored) and fill in real values:
+#   cp .envrc.example .envrc
+#   $EDITOR .envrc
+#   direnv allow .
+#
+# After `direnv allow`, every `cd` into this repo automatically exports the env
+# vars below. No more `set -a && source ...` dance before running gradle.
+
+# --- Sonatype Central Portal credentials ---
+# Get from https://central.sonatype.com/account, under "User Tokens".
+export ORG_GRADLE_PROJECT_mavenCentralUsername=""
+export ORG_GRADLE_PROJECT_mavenCentralPassword=""
+
+# --- GPG signing key ---
+# Generate once with: gpg --full-generate-key  (RSA 4096)
+# Export with:        gpg --export-secret-keys --armor <key-id> > ~/.gnupg/tesser-sdk-signing.asc
+# Public half must be published: gpg --send-keys <key-id>
+#
+# direnv handles the multi-line PEM block natively via $(cat ...). No escape
+# dance needed. Point this at wherever you saved the exported key.
+export ORG_GRADLE_PROJECT_signingInMemoryKey="$(cat ~/.gnupg/tesser-sdk-signing.asc 2>/dev/null)"
+export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword=""   # empty if you generated without a passphrase
+
+# --- Bonus: auto-source the create-wallet example's env file too ---
+# Lets `./gradlew :examples:create-wallet:run` work without a separate
+# `set -a && source examples/create-wallet/.env.local` step.
+if [ -f examples/create-wallet/.env.local ]; then
+    dotenv examples/create-wallet/.env.local
+fi

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial v0.0.1 scaffold — `LocalSigner.signCreateWallet` (signer-only; no HTTP layer).
+- `LocalSigner.signCreateWallet(...)` for producing locally-signed
+  wallet-creation payloads ready to submit to the Tesser API.
+- Public types: `SigningConfig`, `WalletType`, `CreateWalletParams`,
+  `SignedResult`, and a sealed `TesserError` hierarchy.
+- `examples/create-wallet` reference script that performs the full OAuth
+  handshake and submits a wallet-creation request against Tesser staging.
 
 [Unreleased]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.1...HEAD

@@ -147,13 +147,8 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 ### Intellij+all Patch ###
-# Ignore everything but code style settings and run configurations
-# that are supposed to be shared within teams.
-
-.idea/*
-
-!.idea/codeStyles
-!.idea/runConfigurations
+# Ignore the entire .idea/ directory. IDE state stays local to each developer.
+.idea/
 
 ### Kotlin ###
 # Compiled class file
@@ -303,7 +298,37 @@ gradle-app.setting
 # End of https://www.toptal.com/developers/gitignore/api/gradle,kotlin,intellij+all,macos,windows,linux,visualstudiocode,eclipse
 
 # --- Repo-specific ---
-# specs, plans, probes — local-only per project convention
-docs/superpowers/
-# one-shot probe directories (Task 1; deleted in Task 7)
+# Local-only planning artifacts (specs, plans, probes).
+docs/
+# Throwaway one-shot probe directories.
 _probe/
+# Dotenv files anywhere in the tree are ignored (they hold real secrets).
+# Templates ending in .example are kept so the example app's setup is reproducible.
+.env
+.env.*
+!.env.example
+!.env.*.example
+# direnv files: same pattern as dotenv. The real one is ignored, template stays committed.
+.envrc
+!.envrc.example
+
+# Signing keys, certificates, and credentials. Never commit, anywhere in the tree.
+# Covers: PGP/GPG armored + binary, PEM, raw keys, PKCS#8/12, Java keystores.
+# Add a `!path/to/file.ext` line if you ever legitimately need to commit one
+# (very rare; these belong outside the repo, e.g., in ~/.gnupg/).
+*.asc
+*.gpg
+*.pgp
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Ignore Gradle build output directory
+build
+
+# Ignore Kotlin plugin data
+.kotlin
