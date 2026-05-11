@@ -9,7 +9,7 @@ instead of webhooks:
    `signature_requested` status with a populated `unsigned_transaction`.
 4. Sign the step locally with `LocalSigner.signStep`.
 5. POST the signature to `/v1/treasury/rebalances/{id}/steps/{stepId}/sign`.
-6. Poll until the step's `status` is `finalized`.
+6. Poll until the step's `status` is `completed`.
 
 > **Status:** functional. Use this variant while Tesser webhook delivery is
 > unreliable; it does not require a tunnel, public URL, or webhook
@@ -57,14 +57,14 @@ Signing step step_... for transfer reb_... (signWith=0x..., network=BASE_SEPOLIA
 Local signature produced (... chars)
 Submitting signature: POST https://staging.tesser.xyz/v1/treasury/rebalances/reb_.../steps/step_.../sign
 Step submitted. API response: {...}
-Polling rebalance until the step's status is `finalized` ...
-  step status=submitted finalized_at=null failed_at=null
-  step status=confirmed finalized_at=null failed_at=null
-  step status=finalized finalized_at=2026-... failed_at=null
-Rebalance complete. step.id=step_... status=finalized finalized_at=2026-...
+Polling rebalance until the step's status is `completed` ...
+  step status=submitted completed_at=null failed_at=null
+  step status=confirmed completed_at=null failed_at=null
+  step status=completed completed_at=2026-... failed_at=null
+Rebalance complete. step.id=step_... status=completed completed_at=2026-...
 ```
 
-If you see `Rebalance complete.` with `status=finalized`, the round-trip
+If you see `Rebalance complete.` with `status=completed`, the round-trip
 succeeded end-to-end.
 
 ## Troubleshooting
@@ -79,5 +79,5 @@ succeeded end-to-end.
 | `Account ... has no crypto_wallet_address` | Source `FROM_ACCOUNT_ID` is not a wallet-backed account | Use a different account. The example only signs transactions for crypto wallets. |
 | `POST .../sign failed: 422 ... bad signature` | Stamp wire format does not match what the server expects | Capture the unsigned transaction bytes and the produced signature; file an issue with both. |
 | `POST .../sign failed: 409 ... step already signed / expired` | A previous run already submitted, or the rebalance timed out | Create a fresh rebalance and try again. |
-| Polling for `status=finalized` times out at 5 minutes | Step is stuck post-submission (chain congestion, RPC outage, indexer lag) | Check the Tesser dashboard for the step's actual status. Increase the polling timeout in `Main.kt::pollUntilStepFinalized` if needed. |
+| Polling for `status=completed` times out at 5 minutes | Step is stuck post-submission (chain congestion, RPC outage, indexer lag) | Check the Tesser dashboard for the step's actual status. Increase the polling timeout in `Main.kt::pollUntilStepCompleted` if needed. |
 | `Could not resolve org.bouncycastle:...` | Network blocked Maven Central | Check VPN/proxy. Maven Central must be reachable for the SDK dependency. |

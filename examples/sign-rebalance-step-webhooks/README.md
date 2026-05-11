@@ -8,7 +8,7 @@ End-to-end harness that exercises the full Tesser rebalance flow:
 3. Create a rebalance via `POST /v1/treasury/rebalances`.
 4. Receive the signing event, sign the step locally with `LocalSigner.signStep`,
    and POST the signature to `/v1/treasury/rebalances/{id}/steps/{stepId}/sign`.
-5. Wait for `step.completed` and report `finalized_at`.
+5. Wait for a step event with `data.object.status == "completed"` and report `completed_at`.
 
 > **Status:** webhook delivery from Tesser staging is currently **unreliable**.
 > If you don't see events arrive within the configured timeout, switch to the

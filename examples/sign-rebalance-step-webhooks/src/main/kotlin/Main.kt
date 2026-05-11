@@ -32,15 +32,16 @@ import kotlin.time.Duration.Companion.seconds
  *      callbacks. The handler accepts POSTs at any path so the same listener
  *      works behind cloudflared, ngrok, localhost.run, whcli, etc. without
  *      caring about path-rewriting. Register the tunnel's public URL in the
- *      Tesser dashboard subscribed to the `step.signature_requested` and
- *      `step.completed` events.
+ *      Tesser dashboard subscribed to all `step.*` events (we filter by
+ *      `data.object.status` rather than envelope type, so the example
+ *      doesn't care which specific event type carries the terminal state).
  *   3. POST `/v1/treasury/rebalances` with the rebalance request body built
  *      from env.
  *   4. Wait for the `step.signature_requested` webhook event.
  *   5. Sign the step locally with `LocalSigner.signStep`.
  *   6. POST the signature to `/v1/treasury/rebalances/{id}/steps/{stepId}/sign`.
- *   7. Wait for the `step.completed` webhook event.
- *   8. Print the final step summary (using `finalized_at`) and shut down.
+ *   7. Wait for a step event carrying `data.object.status == "completed"`.
+ *   8. Print the final step summary (using `completed_at`) and shut down.
  *
  * Run:
  *   cp .env.example .env.local && $EDITOR .env.local
@@ -75,8 +76,17 @@ fun main(): Unit =
 
             submitSignature(config, token, step, signed)
 
-            println("Waiting for `step.completed` event ...")
-            val completed = listener.awaitEventOfType("step.completed", timeout = 5.minutes)
+            println("Waiting for step ${step.id} to reach `status=completed` ...")
+            val completed =
+                listener.awaitEventWhere(
+                    timeout = 5.minutes,
+                    label = "step ${step.id} status=completed",
+                ) { envelope ->
+                    val stepObject = envelope["data"]?.jsonObject?.get("object")?.jsonObject
+                    val eventStepId = stepObject?.get("id")?.jsonPrimitive?.contentOrNull
+                    val eventStatus = stepObject?.get("status")?.jsonPrimitive?.contentOrNull
+                    eventStepId == step.id && eventStatus == "completed"
+                }
             printCompletedStep(completed)
         }
     }
@@ -163,12 +173,28 @@ private class WebhookListener private constructor(
         type: String,
         timeout: Duration = 60.seconds,
     ): JsonObject =
+        awaitEventWhere(timeout, "type=$type") { envelope ->
+            envelope["type"]?.jsonPrimitive?.content == type
+        }
+
+    /**
+     * Receive events from the channel, discarding any that don't satisfy
+     * [predicate]. Throws if the timeout elapses before a matching event
+     * arrives. [label] is used only in skip logging so the run output makes
+     * sense to someone reading along.
+     */
+    suspend fun awaitEventWhere(
+        timeout: Duration = 60.seconds,
+        label: String = "predicate",
+        predicate: (JsonObject) -> Boolean,
+    ): JsonObject =
         withTimeout(timeout) {
             while (true) {
                 val envelope = events.receive()
-                val received = envelope["type"]?.jsonPrimitive?.content
-                if (received == type) return@withTimeout envelope
-                println("  (skipping webhook event type=$received id=${envelope["id"]?.jsonPrimitive?.content})")
+                if (predicate(envelope)) return@withTimeout envelope
+                val type = envelope["type"]?.jsonPrimitive?.content
+                val id = envelope["id"]?.jsonPrimitive?.content
+                println("  (skipping webhook event — $label not satisfied; type=$type id=$id)")
             }
             @Suppress("UNREACHABLE_CODE")
             error("unreachable")
@@ -273,7 +299,10 @@ private fun buildStepForSigning(
     val signWith = fetchCryptoWalletAddress(config.tesserBaseUrl, token, fromAccountId)
     return StepForSigning(
         id = stepDto.requireString("id"),
-        transferId = stepDto.requireString("transfer_id"),
+        // Webhook step DTO uses `rebalance_id` for the parent UUID; the GET
+        // response uses `transfer_id` for the same value. Read `rebalance_id`
+        // here since this code is fed by the webhook event.
+        transferId = stepDto.requireString("rebalance_id"),
         unsignedTransaction = stepDto.requireString("unsigned_transaction"),
         signWith = signWith,
         network = network,
@@ -309,11 +338,11 @@ private fun submitSignature(
 private fun printCompletedStep(event: JsonObject) {
     val stepObject =
         event["data"]?.jsonObject?.get("object")?.jsonObject
-            ?: error("step.completed event missing data.object: $event")
+            ?: error("Completion event missing data.object: $event")
     println(
         "Rebalance complete. step.id=${stepObject["id"]?.jsonPrimitive?.content}" +
             " status=${stepObject["status"]?.jsonPrimitive?.content}" +
-            " finalized_at=${stepObject["finalized_at"]?.jsonPrimitive?.content}",
+            " completed_at=${stepObject["completed_at"]?.jsonPrimitive?.content}",
     )
 }
 
