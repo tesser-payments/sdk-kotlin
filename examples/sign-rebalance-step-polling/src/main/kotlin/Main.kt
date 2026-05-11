@@ -35,7 +35,7 @@ import kotlin.time.Duration.Companion.seconds
  *      `signature_requested` and `unsigned_transaction` is populated.
  *   4. Sign the step locally with `LocalSigner.signStep`.
  *   5. POST the signature to `/v1/treasury/rebalances/{id}/steps/{stepId}/sign`.
- *   6. Poll the rebalance until the step's `status` is `finalized`
+ *   6. Poll the rebalance until the step's `status` is `completed`
  *      (or fail loudly if any step reports `failed_at`).
  *   7. Print the final step summary and shut down.
  *
@@ -69,8 +69,8 @@ fun main(): Unit =
 
         submitSignature(config, token, step, signed)
 
-        println("Polling rebalance until the step's status is `finalized` ...")
-        val finalStep = pollUntilStepFinalized(config.tesserBaseUrl, token, rebalanceId, step.id)
+        println("Polling rebalance until the step's status is `completed` ...")
+        val finalStep = pollUntilStepCompleted(config.tesserBaseUrl, token, rebalanceId, step.id)
         printFinalStep(finalStep)
     }
 
@@ -214,7 +214,7 @@ private fun printFinalStep(stepDto: JsonObject) {
     println(
         "Rebalance complete. step.id=${stepDto["id"]?.jsonPrimitive?.content}" +
             " status=${stepDto["status"]?.jsonPrimitive?.content}" +
-            " finalized_at=${stepDto["finalized_at"]?.jsonPrimitive?.content}",
+            " completed_at=${stepDto["completed_at"]?.jsonPrimitive?.content}",
     )
 }
 
@@ -257,10 +257,10 @@ private suspend fun pollUntilSignatureRequested(
     }
 
 /**
- * Poll the rebalance until the step matching [stepId] has `status == "finalized"`.
+ * Poll the rebalance until the step matching [stepId] has `status == "completed"`.
  * Throws on timeout or if any step reports `failed_at`.
  */
-private suspend fun pollUntilStepFinalized(
+private suspend fun pollUntilStepCompleted(
     baseUrl: String,
     token: String,
     rebalanceId: String,
@@ -275,17 +275,17 @@ private suspend fun pollUntilStepFinalized(
             val step = steps.map { it.jsonObject }.firstOrNull { it["id"]?.jsonPrimitive?.content == stepId }
                 ?: error("Rebalance has no step with id $stepId: $rebalance")
             val status = step["status"]?.jsonPrimitive?.contentOrNull
-            val finalizedAt = step["finalized_at"]?.jsonPrimitive?.contentOrNull
+            val completedAt = step["completed_at"]?.jsonPrimitive?.contentOrNull
             val failedAt = step["failed_at"]?.jsonPrimitive?.contentOrNull
             if (status != lastReportedStatus) {
-                println("  step status=$status finalized_at=$finalizedAt failed_at=$failedAt")
+                println("  step status=$status completed_at=$completedAt failed_at=$failedAt")
                 lastReportedStatus = status
             }
             if (failedAt != null) {
                 val reasons = step["status_reasons"]?.toString() ?: "[]"
                 error("Step $stepId failed_at=$failedAt status_reasons=$reasons")
             }
-            if (status == "finalized") return@withTimeout step
+            if (status == "completed") return@withTimeout step
             delay(2.seconds)
         }
         @Suppress("UNREACHABLE_CODE")
