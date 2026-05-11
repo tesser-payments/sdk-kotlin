@@ -76,11 +76,16 @@ fun main(): Unit =
 
             submitSignature(config, token, step, signed)
 
-            println("Waiting for a step event with `status=completed` ...")
+            println("Waiting for step ${step.id} to reach `status=completed` ...")
             val completed =
-                listener.awaitEventWhere(timeout = 5.minutes, label = "status=completed") { envelope ->
+                listener.awaitEventWhere(
+                    timeout = 5.minutes,
+                    label = "step ${step.id} status=completed",
+                ) { envelope ->
                     val stepObject = envelope["data"]?.jsonObject?.get("object")?.jsonObject
-                    stepObject?.get("status")?.jsonPrimitive?.contentOrNull == "completed"
+                    val eventStepId = stepObject?.get("id")?.jsonPrimitive?.contentOrNull
+                    val eventStatus = stepObject?.get("status")?.jsonPrimitive?.contentOrNull
+                    eventStepId == step.id && eventStatus == "completed"
                 }
             printCompletedStep(completed)
         }
