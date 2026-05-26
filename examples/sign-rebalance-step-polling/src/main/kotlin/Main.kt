@@ -9,6 +9,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import xyz.tesser.sdk.LocalSigner
 import xyz.tesser.sdk.SignedStepResult
 import xyz.tesser.sdk.SigningConfig
@@ -146,13 +147,19 @@ private fun createRebalance(
 ): String {
     val body =
         buildJsonObject {
-            put("from_account_id", config.rebalance.fromAccountId)
-            put("from_amount", config.rebalance.fromAmount)
-            put("from_network", config.rebalance.fromNetwork)
-            put("from_currency", config.rebalance.fromCurrency)
-            put("to_account_id", config.rebalance.toAccountId)
-            put("to_network", config.rebalance.toNetwork)
-            put("to_currency", config.rebalance.toCurrency)
+            putJsonObject("desired") {
+                putJsonObject("from") {
+                    put("account_id", config.rebalance.fromAccountId)
+                    put("amount", config.rebalance.fromAmount)
+                    put("currency", config.rebalance.fromCurrency)
+                    put("network", config.rebalance.fromNetwork)
+                }
+                putJsonObject("to") {
+                    put("account_id", config.rebalance.toAccountId)
+                    put("currency", config.rebalance.toCurrency)
+                    put("network", config.rebalance.toNetwork)
+                }
+            }
         }.toString()
 
     println("Creating rebalance: POST ${config.tesserBaseUrl}/v1/treasury/rebalances")
