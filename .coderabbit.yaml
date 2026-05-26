@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# Inherits the centralized config at tesser-payments/coderabbit.
+# See https://github.com/tesser-payments/coderabbit for inheritance mechanics
+# and the rules being applied. Add overrides below with `path` keys other
+# than "**" to avoid replacing the central global block.
+inheritance: true
