@@ -111,6 +111,21 @@ class SignStepActivityTest {
         }
 
     @Test
+    fun `Ethereum Sepolia network maps to TRANSACTION_TYPE_ETHEREUM`() =
+        runTest {
+            val sepoliaStep = step.copy(network = "ETHEREUM_SEPOLIA")
+            val bodySlot = slot<String>()
+            val stamp =
+                mockk<Stamp>().also {
+                    coEvery { it.stamp(any(), capture(bodySlot)) } returns
+                        StampResult("X-Stamp", "STAMP_VALUE")
+                }
+            signStepInternal(cfg, sepoliaStep, SignStepOptions(), stamp)
+            val params = Json.parseToJsonElement(bodySlot.captured).jsonObject["parameters"]!!.jsonObject
+            params["type"]!!.jsonPrimitive.content shouldBe "TRANSACTION_TYPE_ETHEREUM"
+        }
+
+    @Test
     fun `unknown network throws ConfigError before any stamping`() =
         runTest {
             val unknownNet = step.copy(network = "MARS_TESTNET")
