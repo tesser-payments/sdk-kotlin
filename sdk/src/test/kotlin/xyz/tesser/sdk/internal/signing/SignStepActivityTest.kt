@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
@@ -126,11 +127,40 @@ class SignStepActivityTest {
         }
 
     @Test
+    fun `Tempo networks preserve the approved transaction in the stamped envelope`() =
+        runTest {
+            for (network in listOf("TEMPO", "TEMPO_MODERATO")) {
+                val tempoStep = step.copy(network = network, unsignedTransaction = "0x76deadbeef")
+                val stamp = stubStamp()
+                val result = signStepInternal(cfg, tempoStep, SignStepOptions(), stamp)
+                val envelope = Json.parseToJsonElement(String(Base64.getDecoder().decode(result.signature))).jsonObject
+                envelope.keys shouldBe setOf("body", "stamp")
+                envelope["stamp"]!!.jsonPrimitive.content shouldBe "FAKE_STAMP_VALUE"
+                envelope["stamp"]!!.jsonPrimitive.content shouldBe result.metadata.stampHeaderValue
+                val stampedBody = envelope["body"]!!.jsonPrimitive.content
+                stampedBody shouldBe result.metadata.body
+                coVerify(exactly = 1) { stamp.stamp(cfg, stampedBody) }
+                result.unsignedTransaction shouldBe tempoStep.unsignedTransaction
+                val body = Json.parseToJsonElement(stampedBody).jsonObject
+                body["type"]!!.jsonPrimitive.content shouldBe "ACTIVITY_TYPE_SIGN_TRANSACTION_V2"
+                body["organizationId"]!!.jsonPrimitive.content shouldBe cfg.enclaveId
+                val timestampMs = body["timestampMs"]!!.jsonPrimitive.content.toLong()
+                (timestampMs > 0) shouldBe true
+                val parameters = body["parameters"]!!.jsonObject
+                parameters["type"]!!.jsonPrimitive.content shouldBe "TRANSACTION_TYPE_TEMPO"
+                parameters["signWith"]!!.jsonPrimitive.content shouldBe tempoStep.signWith
+                parameters["unsignedTransaction"]!!.jsonPrimitive.content shouldBe tempoStep.unsignedTransaction
+            }
+        }
+
+    @Test
     fun `unknown network throws ConfigError before any stamping`() =
         runTest {
             val unknownNet = step.copy(network = "MARS_TESTNET")
+            val stamp = stubStamp()
             shouldThrow<TesserError.ConfigError> {
-                signStepInternal(cfg, unknownNet, SignStepOptions(), stubStamp())
+                signStepInternal(cfg, unknownNet, SignStepOptions(), stamp)
             }
+            coVerify(exactly = 0) { stamp.stamp(any(), any()) }
         }
 }

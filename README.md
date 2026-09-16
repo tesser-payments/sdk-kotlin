@@ -81,6 +81,20 @@ troubleshooting.
   input (blank keys, unknown wallet type) and `SigningError` for any
   cryptographic failure.
 
+## Tempo transfers
+
+1. Pass the backend-provided native Tempo transaction (`0x76...`), customer
+   wallet address, and `TEMPO` or `TEMPO_MODERATO` in `StepForSigning` to
+   `LocalSigner.signStep(...)`.
+2. The SDK stamps a Turnkey request with `TRANSACTION_TYPE_TEMPO`, preserving
+   the transaction bytes exactly. Submit the returned `signature` to the
+   existing Tesser signing endpoint.
+3. Tesser obtains the customer signature from Turnkey, adds its sponsor
+   signature, and broadcasts the sponsored transfer. Tesser manages the
+   sponsor key and network fee.
+
+Unknown networks raise `TesserError.ConfigError` before the SDK creates a stamp.
+
 ## Contributing
 
 Building, testing, lint, binary compatibility checks, and the release runbook
