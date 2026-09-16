@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `LocalSigner.signStep(...)` supports `TEMPO` and `TEMPO_MODERATO` with `TRANSACTION_TYPE_TEMPO`. The SDK preserves the backend-provided transaction and authorizes customer signing; Tesser adds the sponsor signature.
+
 ## [0.0.2] - 2026-05-05
 
 ### Added

@@ -6,9 +6,6 @@ import xyz.tesser.sdk.error.TesserError
  * Maps a Tesser-style network identifier (the value of `step.from_network` /
  * `step.to_network`) to the Turnkey `TRANSACTION_TYPE_*` enum value used in
  * `parameters.type` of an `ACTIVITY_TYPE_SIGN_TRANSACTION_V2` activity.
- *
- * EVM-family networks all map to `TRANSACTION_TYPE_ETHEREUM` because Turnkey
- * keys the type by signing scheme, not by chain ID.
  */
 private val NETWORK_TO_TURNKEY_TYPE: Map<String, String> =
     mapOf(
@@ -19,6 +16,8 @@ private val NETWORK_TO_TURNKEY_TYPE: Map<String, String> =
         "POLYGON" to "TRANSACTION_TYPE_ETHEREUM",
         "POLYGON_AMOY" to "TRANSACTION_TYPE_ETHEREUM",
         "SOLANA" to "TRANSACTION_TYPE_SOLANA",
+        "TEMPO" to "TRANSACTION_TYPE_TEMPO",
+        "TEMPO_MODERATO" to "TRANSACTION_TYPE_TEMPO",
     )
 
 internal fun networkToTurnkeyType(network: String): String =
