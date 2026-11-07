@@ -19,23 +19,15 @@ internal data class AccountSpec(
 )
 
 /**
- * Wallet type to account specs lookup. The Ethereum spec is verified
- * end-to-end against Tesser staging. The Solana and Stellar specs are not yet
- * verified against the live API; if either fails for a spec-related reason,
- * file the API response in this repo's issue tracker so the spec can be
- * adjusted.
+ * Wallet type to account specs lookup for the locally-built
+ * `ACTIVITY_TYPE_CREATE_WALLET` body. Ethereum has no entry: its body is built
+ * by Tesser (see `fetchCheckedCreateWalletAccountsBody`). The Solana and
+ * Stellar specs are not yet verified against the live API; if either fails for
+ * a spec-related reason, file the API response in this repo's issue tracker so
+ * the spec can be adjusted.
  */
 internal val WALLET_TYPE_ACCOUNTS: Map<WalletType, List<AccountSpec>> =
     mapOf(
-        WalletType.STABLECOIN_ETHEREUM to
-            listOf(
-                AccountSpec(
-                    curve = "CURVE_SECP256K1",
-                    pathFormat = "PATH_FORMAT_BIP32",
-                    path = "m/44'/60'/0'/0/0",
-                    addressFormat = "ADDRESS_FORMAT_ETHEREUM",
-                ),
-            ),
         WalletType.STABLECOIN_SOLANA to
             listOf(
                 AccountSpec(

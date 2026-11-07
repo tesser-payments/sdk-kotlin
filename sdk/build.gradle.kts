@@ -33,6 +33,14 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.processResources {
+    val sdkVersion = project.version.toString()
+    inputs.property("sdkVersion", sdkVersion)
+    filesMatching("xyz/tesser/sdk/sdk-version.properties") {
+        expand("version" to sdkVersion)
+    }
+}
+
 mavenPublishing {
     // Sonatype migrated everyone to the Central Portal in 2024; OSSRH is sunset.
     // Vanniktech 0.30+ targets the Central Portal directly.

@@ -4,9 +4,12 @@ package xyz.tesser.sdk.error
  * Sealed root of all SDK errors. Branch on `when (err)` for exhaustive matching.
  *
  * The signer path throws [ConfigError] for bad caller input and [SigningError]
- * for cryptographic failures. [APIError], [ConnectionError], and [TimeoutError]
- * are part of the public surface so future HTTP-issuing operations can throw
- * them without breaking the API.
+ * for cryptographic failures or a rejected unsigned payload. [APIError],
+ * [ConnectionError], and [TimeoutError] come from the request
+ * `LocalSigner.signCreateWallet` makes to Tesser for Ethereum wallets.
+ * [ConnectionError], [TimeoutError], and an [APIError] with status 429 or 5xx
+ * are safe to retry; an [APIError] with any other 4xx status fails the same
+ * way on retry.
  */
 public sealed class TesserError(message: String, cause: Throwable? = null) : Exception(message, cause) {
     /** Bad input at construction or call site. SDK-side validation, not Tesser API. */

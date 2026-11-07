@@ -45,7 +45,7 @@ fun main(): Unit = runBlocking {
     println("Fetching access token from $authTokenUrl (audience=$audience) ...")
     val token = fetchToken(authTokenUrl, clientId, clientSecret, audience)
 
-    val signer = LocalSigner(SigningConfig(pubKey, privKey, enclaveId))
+    val signer = LocalSigner(SigningConfig(pubKey, privKey, enclaveId), apiBaseUrl = baseUrl)
     println("Signing CreateWallet activity for type=$walletType name=$walletName ...")
     val signed = signer.signCreateWallet(
         CreateWalletParams(name = walletName, type = walletType),

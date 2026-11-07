@@ -11,6 +11,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 import xyz.tesser.sdk.internal.signing.Stamp
 import xyz.tesser.sdk.internal.signing.StampResult
+import xyz.tesser.sdk.internal.signing.createDefaultHttpClient
 import java.util.Base64
 
 class LocalSignerStepTest {
@@ -38,7 +39,7 @@ class LocalSignerStepTest {
     @Test
     fun `signStep returns a non-empty base64 signature`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp())
+            val signer = LocalSigner(cfg, "https://api.tesser.xyz", createDefaultHttpClient(), stubStamp())
             val result = signer.signStep(step)
             result.signature.isNotBlank() shouldBe true
             result.metadata.stampHeaderValue shouldBe "STAMP_VALUE"
@@ -47,7 +48,7 @@ class LocalSignerStepTest {
     @Test
     fun `signStep payload body is a Turnkey activity referencing the unsigned transaction and signWith`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp())
+            val signer = LocalSigner(cfg, "https://api.tesser.xyz", createDefaultHttpClient(), stubStamp())
             val result = signer.signStep(step)
             val composite = String(Base64.getDecoder().decode(result.signature))
             val body = Json.parseToJsonElement(composite).jsonObject["body"]!!.jsonPrimitive.content
@@ -59,7 +60,7 @@ class LocalSignerStepTest {
     @Test
     fun `signStep echoes the unsignedTransaction back on the result`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp())
+            val signer = LocalSigner(cfg, "https://api.tesser.xyz", createDefaultHttpClient(), stubStamp())
             val result = signer.signStep(step)
             result.unsignedTransaction shouldBe step.unsignedTransaction
         }
@@ -67,7 +68,7 @@ class LocalSignerStepTest {
     @Test
     fun `signStep accepts default SignStepOptions`() =
         runTest {
-            val signer = LocalSigner(cfg, stubStamp())
+            val signer = LocalSigner(cfg, "https://api.tesser.xyz", createDefaultHttpClient(), stubStamp())
             // No `opts` argument; default ctor should be used.
             signer.signStep(step)
         }
