@@ -43,6 +43,35 @@ class LocalSignerTest {
     }
 
     @Test
+    fun `constructor without apiBaseUrl accepts a fully-populated SigningConfig`() {
+        LocalSigner(cfg)
+    }
+
+    @Test
+    fun `constructor taking only a SigningConfig is available from Java`() {
+        LocalSigner::class.java.getConstructor(SigningConfig::class.java).newInstance(cfg)
+        LocalSigner::class.java.getConstructor(SigningConfig::class.java, String::class.java).newInstance(cfg, apiBaseUrl)
+    }
+
+    @Test
+    fun `constructor without apiBaseUrl rejects blank publicKey`() {
+        val ex = shouldThrow<IllegalArgumentException> { LocalSigner(cfg.copy(publicKey = "")) }
+        ex.message!! shouldContain "publicKey"
+    }
+
+    @Test
+    fun `constructor rejects a blank key before an invalid apiBaseUrl`() {
+        val ex = shouldThrow<IllegalArgumentException> { LocalSigner(cfg.copy(privateKey = ""), "api.tesser.xyz") }
+        ex.message!! shouldContain "privateKey"
+    }
+
+    @Test
+    fun `constructor rejects an empty apiBaseUrl`() {
+        val ex = shouldThrow<IllegalArgumentException> { LocalSigner(cfg, "") }
+        ex.message!! shouldContain "apiBaseUrl"
+    }
+
+    @Test
     fun `constructor rejects blank publicKey`() {
         val ex =
             shouldThrow<IllegalArgumentException> {

@@ -12,6 +12,8 @@ public final class xyz/tesser/sdk/CreateWalletParams {
 }
 
 public final class xyz/tesser/sdk/LocalSigner {
+	public fun <init> (Lxyz/tesser/sdk/SigningConfig;)V
+	public fun <init> (Lxyz/tesser/sdk/SigningConfig;Ljava/lang/String;)V
 	public fun <init> (Lxyz/tesser/sdk/SigningConfig;Ljava/lang/String;Ljava/net/http/HttpClient;)V
 	public synthetic fun <init> (Lxyz/tesser/sdk/SigningConfig;Ljava/lang/String;Ljava/net/http/HttpClient;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getSigning ()Lxyz/tesser/sdk/SigningConfig;

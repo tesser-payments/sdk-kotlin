@@ -14,6 +14,7 @@ import java.net.http.HttpHeaders
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.util.Collections
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
@@ -24,7 +25,7 @@ import javax.net.ssl.SSLSession
 internal class StubHttpClient(
     private val respond: (HttpRequest) -> CompletableFuture<HttpResponse<String>>,
 ) : HttpClient() {
-    val requests: MutableList<HttpRequest> = mutableListOf()
+    val requests: MutableList<HttpRequest> = Collections.synchronizedList(mutableListOf())
 
     override fun cookieHandler(): Optional<CookieHandler> = Optional.empty()
 

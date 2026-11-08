@@ -9,7 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `apiBaseUrl` is optional again and `LocalSigner(signing)` is back. Code
+  written for 0.0.4 compiles and runs unchanged.
+- Without `apiBaseUrl`, the first Ethereum `signCreateWallet` finds the
+  environment of your signing key, production or sandbox, and the signer
+  remembers it for later calls. If neither environment accepts your signing
+  key, the `TesserError.APIError` from production is thrown.
+
 ### Changed
+
+- With `apiBaseUrl` set, behavior is unchanged: only that URL is used.
+- Upgrading from 0.0.x: those versions made no network requests. Ethereum
+  wallet creation now needs outbound HTTPS to `api.tesser.xyz`, and to
+  `api-sandbox.tesser.xyz` for sandbox signing keys.
 
 ### Deprecated
 
