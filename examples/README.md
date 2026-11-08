@@ -19,8 +19,8 @@ the full happy path:
 
 1. OAuth `client_credentials` token exchange against the configured auth URL.
 2. Build a `CreateWalletParams` and call `LocalSigner.signCreateWallet(...)`.
-   For `stablecoin_ethereum` the SDK fetches the unsigned payload from
-   `${API_BASE_URL}/v1/accounts/wallets/unsigned-payload` and signs it locally.
+   For `stablecoin_ethereum` the SDK fetches the request to sign from the
+   Tesser API, checks that it matches your parameters, and signs it locally.
 3. POST the signed payload to `${API_BASE_URL}/v1/accounts/wallets`.
 4. Print the API response, or fail loudly if any step errors.
 
@@ -117,7 +117,7 @@ see that line, the SDK round-tripped successfully end-to-end.
 | `OAuth token exchange failed: 403 ... "access_denied" ... "No audience parameter was provided"` | You've explicitly overridden `API_AUDIENCE` to an empty string. The example defaults audience to `API_BASE_URL`. | Unset `API_AUDIENCE` (or set it to `$API_BASE_URL`) and re-source `.env.local`. |
 | `OAuth response did not contain access_token` | Wrong `AUTH_TOKEN_URL` host or trailing slash | Verify the URL ends in `/oauth/token` exactly; check no trailing whitespace in `.env.local`. |
 | `POST .../v1/accounts/wallets failed: 401` | Token authenticated but wrong audience or scope | Coordinate with Tesser support; the token may need a specific scope. |
-| `POST .../v1/accounts/wallets failed: 400 ... bad signature` | Stamp wire-format mismatch (rare) | File an issue with `signed.metadata.body` attached so the activity payload can be inspected. |
+| `POST .../v1/accounts/wallets failed: 400 ... bad signature` | Signature format mismatch (rare) | File an issue with `signed.metadata.body` attached so the signed request can be inspected. |
 | `POST .../v1/accounts/wallets failed: 502 ... wallet label must be unique` | A wallet with that name already exists in your Tesser account | The example appends a millisecond timestamp to the wallet name, so this normally cannot recur. If it does, change the name in `Main.kt` or delete the existing wallet from the dashboard. |
 | `TesserError.SigningError: Hex string contains non-hex characters` | `SIGNING_PRIVATE_KEY` has whitespace or a `0x` prefix | Clean to bare 64 hex characters (no `0x`, no spaces). |
 | `TesserError.SigningError: P-256 private key must be 32 bytes` | Key is the wrong length | Re-export. The key needs to be exactly 64 hex characters (32 bytes). |

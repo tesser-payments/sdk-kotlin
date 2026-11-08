@@ -86,6 +86,6 @@ end-to-end.
 | `Waiting up to 60s for ... event` then timeout | Webhook is not registered with Tesser, or the tunnel URL changed | Re-check the dashboard subscription URL. Re-run the tunnel and update `WEBHOOK_PUBLIC_URL`. |
 | Webhook arrives but is ignored | The `type` field is something other than `step.signature_requested` | Inspect the raw event in the server log. The harness only acts on `step.signature_requested`. |
 | `step DTO missing transfer_id` (or similar) | The step DTO field names changed on the server side | File an issue with the captured event payload. The expected fields are `id`, `transfer_id`, `unsigned_transaction`. |
-| `POST .../sign failed: 422 ... bad signature` | Stamp wire format does not match what the server expects | Capture the unsigned transaction bytes and the produced signature; file an issue with both. The current implementation stamps the unsigned transaction hex string verbatim using the X-Stamp envelope. |
+| `POST .../sign failed: 422 ... bad signature` | Signature format does not match what the server expects | Capture the unsigned transaction bytes and the produced signature; file an issue with both. |
 | `POST .../sign failed: 409 ... step already signed / expired` | Either a previous run already submitted, or the rebalance timed out | Create a fresh rebalance and try again. |
 | `Could not resolve org.bouncycastle:...` | Network blocked Maven Central | Check VPN/proxy. Maven Central must be reachable for the SDK dependency. |

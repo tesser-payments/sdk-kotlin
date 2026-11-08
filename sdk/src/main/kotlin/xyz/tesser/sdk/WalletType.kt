@@ -3,10 +3,10 @@ package xyz.tesser.sdk
 import xyz.tesser.sdk.error.TesserError
 
 /**
- * Wallet types Tesser supports. [STABLECOIN_ETHEREUM] signs the
- * `ACTIVITY_TYPE_CREATE_WALLET_ACCOUNTS` payload built by Tesser. The other
- * types map to a local account spec (curve, pathFormat, path, addressFormat)
- * used when building the `ACTIVITY_TYPE_CREATE_WALLET` payload.
+ * Wallet types Tesser supports. For [STABLECOIN_ETHEREUM] the SDK signs a
+ * wallet-creation request fetched from the Tesser API. The other types are
+ * signed locally from their account spec (curve, pathFormat, path,
+ * addressFormat).
  */
 public enum class WalletType(public val wireValue: String) {
     STABLECOIN_ETHEREUM("stablecoin_ethereum"),

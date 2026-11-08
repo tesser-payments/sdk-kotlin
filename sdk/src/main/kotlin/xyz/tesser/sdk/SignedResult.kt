@@ -3,12 +3,12 @@ package xyz.tesser.sdk
 /**
  * Output of [LocalSigner.signCreateWallet].
  *
- * @property signature Base64-encoded JSON `{body, stamp}` envelope. Pass this
+ * @property signature Signature for the wallet-creation request. Pass this
  *   value straight into Tesser's wallet-creation request body as the
  *   `signature` field.
- * @property metadata Diagnostic context: the inner stamp header values and the
- *   exact body that was stamped. Useful for logging and debugging; not
- *   required for the request itself.
+ * @property metadata Diagnostic context: the signature header and the exact
+ *   request that was signed. Useful for logging and debugging; not required
+ *   for the request itself.
  */
 public data class SignedResult(
     val signature: String,
@@ -18,9 +18,9 @@ public data class SignedResult(
 /**
  * Diagnostic metadata attached to a [SignedResult].
  *
- * @property stampHeaderName The stamp header name (typically `"X-Stamp"`).
- * @property stampHeaderValue The base64url-encoded stamp value.
- * @property body The exact JSON body that was stamped.
+ * @property stampHeaderName The signature header name.
+ * @property stampHeaderValue The base64url-encoded signature header value.
+ * @property body The exact JSON request that was signed.
  */
 public data class SignedResultMetadata(
     val stampHeaderName: String,
