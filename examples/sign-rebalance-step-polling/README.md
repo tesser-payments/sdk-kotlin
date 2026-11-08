@@ -74,10 +74,10 @@ succeeded end-to-end.
 | `Missing required environment variable: ...` | `set -a && source ...` did not run, or the variable is uncommented | Re-source `.env.local`. Confirm the variable has a value. |
 | `OAuth token exchange failed: 401` | Bad `API_CLIENT_ID` / `API_CLIENT_SECRET` | Re-copy from the Tesser dashboard. |
 | `POST .../v1/treasury/rebalances failed: 422` | Bad rebalance request (missing fields, currency mismatch, unsupported network, etc.) | Inspect the API error message. Confirm `from`/`to` fields match Tesser's account/currency expectations. |
-| Polling for `signature_requested` times out at 2 minutes | Tesser hasn't transitioned the step yet (provider issue, balance issue, network outage on QuickNode) | Inspect the rebalance via the Tesser dashboard. Common causes: source account has no balance, network is paused, or step prep is stuck. |
+| Polling for `signature_requested` times out at 2 minutes | Tesser hasn't transitioned the step yet (balance issue, network outage, or a delay preparing the step) | Inspect the rebalance via the Tesser dashboard. Common causes: source account has no balance, network is paused, or step prep is stuck. |
 | `Step ... failed_at=...` thrown during polling | Tesser marked the step failed before signing or before finalization | The error includes `status_reasons` from the API; surface that to Tesser support. |
 | `Account ... has no crypto_wallet_address` | Source `FROM_ACCOUNT_ID` is not a wallet-backed account | Use a different account. The example only signs transactions for crypto wallets. |
-| `POST .../sign failed: 422 ... bad signature` | Stamp wire format does not match what the server expects | Capture the unsigned transaction bytes and the produced signature; file an issue with both. |
+| `POST .../sign failed: 422 ... bad signature` | Signature format does not match what the server expects | Capture the unsigned transaction bytes and the produced signature; file an issue with both. |
 | `POST .../sign failed: 409 ... step already signed / expired` | A previous run already submitted, or the rebalance timed out | Create a fresh rebalance and try again. |
 | Polling for `status=completed` times out at 5 minutes | Step is stuck post-submission (chain congestion, RPC outage, indexer lag) | Check the Tesser dashboard for the step's actual status. Increase the polling timeout in `Main.kt::pollUntilStepCompleted` if needed. |
 | `Could not resolve org.bouncycastle:...` | Network blocked Maven Central | Check VPN/proxy. Maven Central must be reachable for the SDK dependency. |

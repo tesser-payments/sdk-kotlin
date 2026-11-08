@@ -10,7 +10,7 @@ import xyz.tesser.sdk.internal.util.logger
 import java.net.http.HttpClient
 
 /**
- * Produces locally-signed activity payloads for Tesser API operations.
+ * Signs Tesser API requests locally with your API key.
  *
  * Construction validates that all three [SigningConfig] fields are non-blank
  * and that `apiBaseUrl` is an https URL.
@@ -23,8 +23,8 @@ import java.net.http.HttpClient
  *   `https://api-sandbox.tesser.xyz` in sandbox. A trailing `/` or `/v1` is removed.
  * @param httpClient HTTP client used for requests to Tesser. Inject one
  *   to configure a proxy or TLS settings.
- * @param stamp Injected for testability. Production callers omit this; the SDK
- *   creates the platform-appropriate stamper via [Stamp.create].
+ * @param stamp Injected for testability. Production callers use the public
+ *   constructor, which omits it.
  */
 public class LocalSigner internal constructor(
     public val signing: SigningConfig,
@@ -74,9 +74,9 @@ public class LocalSigner internal constructor(
      *
      * @throws xyz.tesser.sdk.error.TesserError.ConfigError if the wallet type
      *   has no registered account spec.
-     * @throws xyz.tesser.sdk.error.TesserError.SigningError if the underlying
-     *   stamper fails (malformed key, OS crypto provider error, etc.) or the
-     *   request fetched from Tesser does not match [params].
+     * @throws xyz.tesser.sdk.error.TesserError.SigningError if signing fails
+     *   (malformed key, OS crypto provider error, etc.) or the request fetched
+     *   from Tesser does not match [params].
      * @throws xyz.tesser.sdk.error.TesserError.APIError if Tesser answers with an
      *   error status or an invalid response. Safe to retry for status 429 or 5xx;
      *   other 4xx statuses fail the same way on retry.
@@ -88,20 +88,19 @@ public class LocalSigner internal constructor(
     public suspend fun signCreateWallet(params: CreateWalletParams): SignedResult = signCreateWalletInternal(signing, params, stamp, api)
 
     /**
-     * Build and stamp an `ACTIVITY_TYPE_SIGN_TRANSACTION_V2` payload for a
-     * rebalance step.
+     * Sign the transaction of a rebalance step.
      *
-     * The returned [SignedStepResult.signature] is the exact value to pass
-     * into the Tesser API's `/sign` request body for that step:
+     * The signature authorizes the transaction with your API key, without
+     * changing it. The returned [SignedStepResult.signature] is the exact value
+     * to pass into the Tesser API's `/sign` request body for that step:
      * `POST /v1/treasury/rebalances/{transferId}/steps/{stepId}/sign` with
      * body `{"signature": result.signature}`. No HTTP is performed; this is a
-     * pure compute call. Tesser forwards the activity to Turnkey on the
-     * caller's behalf.
+     * pure compute call.
      *
      * @throws xyz.tesser.sdk.error.TesserError.ConfigError if [StepForSigning.network]
      *   is not a supported network identifier.
-     * @throws xyz.tesser.sdk.error.TesserError.SigningError if the underlying
-     *   stamper fails (malformed key, OS crypto provider error, etc.).
+     * @throws xyz.tesser.sdk.error.TesserError.SigningError if signing fails
+     *   (malformed key, OS crypto provider error, etc.).
      */
     public suspend fun signStep(
         step: StepForSigning,

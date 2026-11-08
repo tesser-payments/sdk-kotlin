@@ -20,8 +20,8 @@ package xyz.tesser.sdk
  *   `crypto_wallet_address`.
  * @property network The Tesser-style network identifier from the step
  *   (`step.from_network`), e.g. `BASE_SEPOLIA`, `ETHEREUM`, `SOLANA`. Used
- *   to derive the Turnkey `TRANSACTION_TYPE_*` for the underlying activity.
- *   Throws [xyz.tesser.sdk.error.TesserError.ConfigError] at sign time for
+ *   to sign the transaction in that network's format. Throws
+ *   [xyz.tesser.sdk.error.TesserError.ConfigError] at sign time for
  *   unsupported networks.
  */
 public data class StepForSigning(

@@ -41,7 +41,7 @@ public sealed class TesserError(message: String, cause: Throwable? = null) : Exc
     public class TimeoutError(message: String, cause: Throwable? = null) : TesserError(message, cause)
 
     /**
-     * Local signing failure. Wraps cryptographic stamper errors and any
+     * Local signing failure. Wraps cryptographic signing errors and any
      * signing-pipeline failure. Flat (not sealed); sealing remains a
      * non-breaking change later if variants are needed.
      */

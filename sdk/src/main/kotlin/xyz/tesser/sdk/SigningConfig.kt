@@ -8,7 +8,8 @@ package xyz.tesser.sdk
  *   on the client side. If your key was registered in uncompressed form, fix
  *   the registration upstream.
  * @property privateKey Raw 32-byte P-256 private scalar in hex (64 characters).
- * @property enclaveId Sub-organization ID the API key belongs to.
+ * @property enclaveId Enclave ID shown with your signing key in the Tesser
+ *   dashboard.
  */
 public data class SigningConfig(
     val publicKey: String,
