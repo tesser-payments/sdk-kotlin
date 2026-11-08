@@ -16,6 +16,7 @@ import xyz.tesser.sdk.error.TesserError
 import xyz.tesser.sdk.error.TesserErrorDetail
 import xyz.tesser.sdk.internal.util.SDK_VERSION
 import xyz.tesser.sdk.internal.util.json
+import xyz.tesser.sdk.internal.util.logger
 import java.io.IOException
 import java.net.URI
 import java.net.URLEncoder
@@ -29,11 +30,38 @@ private const val UNSIGNED_PAYLOAD_PATH = "/v1/accounts/wallets/unsigned-payload
 private const val CREATE_WALLET_ACCOUNTS_ACTIVITY_TYPE = "ACTIVITY_TYPE_CREATE_WALLET_ACCOUNTS"
 private const val ETHEREUM_ADDRESS_FORMAT = "ADDRESS_FORMAT_ETHEREUM"
 private val UNSIGNED_PAYLOAD_TIMEOUT: Duration = Duration.ofSeconds(10)
+private const val SIGNING_KEY_REJECTED_ERROR_CODE = "signing-4010"
+private const val SIGNING_KEY_REJECTED_STATUS = 401
+internal const val PRODUCTION_API_BASE_URL = "https://api.tesser.xyz"
+internal const val SANDBOX_API_BASE_URL = "https://api-sandbox.tesser.xyz"
+internal val DEFAULT_API_BASE_URLS: List<String> = listOf(PRODUCTION_API_BASE_URL, SANDBOX_API_BASE_URL)
 
-internal data class TesserApiConnection(
-    val baseUrl: String,
+private val log = logger("xyz.tesser.sdk.LocalSigner")
+
+internal class TesserApiConnection private constructor(
     val httpClient: HttpClient,
-)
+    val defaultBaseUrls: List<String>,
+    explicitBaseUrl: String?,
+) {
+    @Volatile
+    var resolvedBaseUrl: String? = explicitBaseUrl
+        private set
+
+    fun remember(baseUrl: String) {
+        resolvedBaseUrl = baseUrl
+    }
+
+    companion object {
+        fun create(
+            apiBaseUrl: String?,
+            httpClient: HttpClient,
+            defaultBaseUrls: List<String> = DEFAULT_API_BASE_URLS,
+        ): TesserApiConnection {
+            val explicitBaseUrl = apiBaseUrl?.let(::normalizeApiBaseUrl)
+            return TesserApiConnection(httpClient, defaultBaseUrls, explicitBaseUrl)
+        }
+    }
+}
 
 private data class UnsignedPayloadQuery(
     val organizationId: String,
@@ -101,10 +129,66 @@ internal suspend fun fetchCheckedCreateWalletAccountsBody(
     params: CreateWalletParams,
     stamp: Stamp,
 ): String {
+    val resolvedBaseUrl = api.resolvedBaseUrl
+    if (resolvedBaseUrl != null) {
+        return fetchCheckedBodyFrom(resolvedBaseUrl, api.httpClient, signing, params, stamp)
+    }
+    return fetchCheckedBodyFromSigningKeyEnvironment(api, signing, params, stamp)
+}
+
+private suspend fun fetchCheckedBodyFromSigningKeyEnvironment(
+    api: TesserApiConnection,
+    signing: SigningConfig,
+    params: CreateWalletParams,
+    stamp: Stamp,
+): String {
+    val signingKeyRejections = mutableListOf<TesserError.APIError>()
+    for (baseUrl in api.defaultBaseUrls) {
+        try {
+            val body = fetchCheckedBodyFrom(baseUrl, api.httpClient, signing, params, stamp)
+            rememberSigningKeyEnvironment(api, baseUrl)
+            return body
+        } catch (e: TesserError) {
+            if (e !is TesserError.APIError || !isSigningKeyRejection(e)) {
+                throw withSuppressedRejections(e, signingKeyRejections)
+            }
+            log.debug("Signing key not accepted by {}", baseUrl)
+            signingKeyRejections += e
+        }
+    }
+    throw withSuppressedRejections(signingKeyRejections.first(), signingKeyRejections.drop(1))
+}
+
+private fun rememberSigningKeyEnvironment(
+    api: TesserApiConnection,
+    baseUrl: String,
+) {
+    api.remember(baseUrl)
+    log.debug("Signing key accepted by {}, using it for later requests", baseUrl)
+}
+
+private fun isSigningKeyRejection(error: TesserError.APIError): Boolean =
+    error.status == SIGNING_KEY_REJECTED_STATUS && error.errorCode == SIGNING_KEY_REJECTED_ERROR_CODE
+
+private fun withSuppressedRejections(
+    error: TesserError,
+    signingKeyRejections: List<TesserError.APIError>,
+): TesserError {
+    signingKeyRejections.forEach { error.addSuppressed(it) }
+    return error
+}
+
+private suspend fun fetchCheckedBodyFrom(
+    baseUrl: String,
+    httpClient: HttpClient,
+    signing: SigningConfig,
+    params: CreateWalletParams,
+    stamp: Stamp,
+): String {
     val query = buildUnsignedPayloadQuery(signing, params)
     val stamped = stamp.stamp(signing, buildCanonicalUnsignedPayloadMessage(query))
-    val request = buildUnsignedPayloadRequest(api.baseUrl, query, stamped)
-    val response = sendUnsignedPayloadRequest(api.httpClient, request)
+    val request = buildUnsignedPayloadRequest(baseUrl, query, stamped)
+    val response = sendUnsignedPayloadRequest(httpClient, request)
     val body = parseUnsignedPayloadBody(response)
     assertUnsignedPayloadMatchesRequest(body, signing, params)
     return body

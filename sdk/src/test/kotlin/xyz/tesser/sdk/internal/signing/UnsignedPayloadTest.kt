@@ -48,7 +48,7 @@ class UnsignedPayloadTest {
             coEvery { it.stamp(any(), capture(stampedMessages)) } returns StampResult("X-Stamp", "STAMP_VALUE")
         }
 
-    private fun connection(httpClient: HttpClient): TesserApiConnection = TesserApiConnection("https://api.tesser.xyz", httpClient)
+    private fun connection(httpClient: HttpClient): TesserApiConnection = TesserApiConnection.create("https://api.tesser.xyz", httpClient)
 
     private fun clientReturningEthereumFixture(): StubHttpClient =
         StubHttpClient.respondingWith(StubHttpResponse(200, UnsignedPayloadFixtures.loadEthereumResponse()))

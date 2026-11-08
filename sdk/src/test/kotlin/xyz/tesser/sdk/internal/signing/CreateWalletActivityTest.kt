@@ -24,7 +24,7 @@ class CreateWalletActivityTest {
             enclaveId = "org_test_123",
         )
 
-    private val api = TesserApiConnection("https://api.tesser.xyz", StubHttpClient.failingWith(AssertionError("no HTTP expected")))
+    private val api = TesserApiConnection.create("https://api.tesser.xyz", StubHttpClient.failingWith(AssertionError("no HTTP expected")))
 
     private fun mockStamp(): Stamp =
         mockk<Stamp>().also {

@@ -42,7 +42,6 @@ fun main() = runBlocking {
       privateKey = System.getenv("SIGNING_PRIVATE_KEY"),
       enclaveId  = System.getenv("SIGNING_ENCLAVE_ID"),
     ),
-    apiBaseUrl = "https://api.tesser.xyz", // sandbox: https://api-sandbox.tesser.xyz
   )
 
   val signed = signer.signCreateWallet(
@@ -68,9 +67,15 @@ troubleshooting.
 
 ## What's included
 
-- `LocalSigner(signing, apiBaseUrl)` requires the Tesser API base URL
-  (`https://api.tesser.xyz` or `https://api-sandbox.tesser.xyz`). An optional
-  `java.net.http.HttpClient` can be passed to configure a proxy.
+- `LocalSigner(signing)` works with production and sandbox signing keys.
+  Without `apiBaseUrl`, the first Ethereum `signCreateWallet` tries
+  production and, if production does not accept your signing key, sandbox,
+  and remembers it for later calls. Set `apiBaseUrl`
+  (`https://api.tesser.xyz` or `https://api-sandbox.tesser.xyz`) if your
+  network allows only one Tesser host, or if you create a new signer per
+  request (each new signer detects again). Send your own API requests to the
+  environment of your signing key. An optional `java.net.http.HttpClient` can
+  be passed to configure a proxy.
 - `LocalSigner.signCreateWallet(...)` signs a wallet-creation request. For
   `STABLECOIN_ETHEREUM`, it first fetches the request to sign from the Tesser
   API and checks that it matches your parameters. The private key never leaves
@@ -83,14 +88,14 @@ troubleshooting.
   `STABLECOIN_STELLAR`. Tesser currently supports managed wallets for
   `STABLECOIN_ETHEREUM` only.
 - Sealed `TesserError` hierarchy. The constructor throws
-  `IllegalArgumentException` for blank keys or an invalid `apiBaseUrl`. The
-  signer throws `ConfigError` for an unknown wallet type and `SigningError`
-  for any signing failure or a fetched request that does not match your
-  parameters. Fetching
-  the request can throw `APIError`, `ConnectionError`, or `TimeoutError`.
+  `IllegalArgumentException` for blank keys or an invalid `apiBaseUrl`, if
+  set. The signer throws `ConfigError` for an unknown wallet type and
+  `SigningError` for any signing failure or a fetched request that does not
+  match your parameters. Fetching the request can throw `APIError`, `ConnectionError`, or `TimeoutError`.
   `ConnectionError`, `TimeoutError`, and an `APIError` with status 429 or 5xx
   are safe to retry; an `APIError` with any other 4xx status fails the same
-  way on retry.
+  way on retry. Without `apiBaseUrl`, if neither environment accepts your
+  signing key, the `APIError` from production is thrown.
 
 ## Tempo transfers
 
