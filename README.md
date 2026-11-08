@@ -10,7 +10,7 @@ Tesser API. Targets JVM 17+ and Kotlin 2.0+.
 
 ```kotlin
 dependencies {
-    implementation("xyz.tesser:sdk:0.0.4")
+    implementation("xyz.tesser:sdk:0.1.0")
 }
 ```
 
@@ -20,11 +20,11 @@ dependencies {
 <dependency>
     <groupId>xyz.tesser</groupId>
     <artifactId>sdk</artifactId>
-    <version>0.0.4</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
-Published on Maven Central once the first release tag is cut.
+Published on [Maven Central](https://central.sonatype.com/artifact/xyz.tesser/sdk).
 
 ## Quick start
 

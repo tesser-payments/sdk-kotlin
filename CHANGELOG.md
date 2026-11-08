@@ -9,28 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `LocalSigner.signStep(...)` supports `TEMPO` and `TEMPO_MODERATO` with `TRANSACTION_TYPE_TEMPO`. The SDK preserves the backend-provided transaction and authorizes customer signing; Tesser adds the sponsor signature.
-- `LocalSigner` accepts an optional `java.net.http.HttpClient` for the
-  unsigned-payload request, for example to configure a proxy.
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0] - 2026-11-08
+
+### Added
+
+- `LocalSigner.signStep(...)` supports `TEMPO` and `TEMPO_MODERATO`. Tesser
+  completes and broadcasts the transfer and pays the network fee.
+- `LocalSigner` accepts an optional `java.net.http.HttpClient`, for example
+  to configure a proxy.
 
 ### Changed
 
 - **Breaking:** `LocalSigner` requires an `apiBaseUrl`
   (`LocalSigner(signing, apiBaseUrl)`): `https://api.tesser.xyz` in
-  production, `https://api-sandbox.tesser.xyz` in sandbox. A trailing `/` or
-  `/v1` is removed.
-- `LocalSigner.signCreateWallet(...)` for `STABLECOIN_ETHEREUM` fetches an
-  `ACTIVITY_TYPE_CREATE_WALLET_ACCOUNTS` body for the workspace's master
-  wallet from `GET /v1/accounts/wallets/unsigned-payload` (one stamped request
-  per call, 10 second timeout, no cache), checks its activity type,
-  organization ID, single account name, and Ethereum address format, and
-  stamps it unchanged. The method signature and the `base64({body, stamp})`
-  result are unchanged. Solana and Stellar keep the locally-built
-  `ACTIVITY_TYPE_CREATE_WALLET` body.
+  production, `https://api-sandbox.tesser.xyz` in sandbox. It must be an
+  https URL. A trailing `/` or `/v1` is removed.
+- `LocalSigner.signCreateWallet(...)` for `STABLECOIN_ETHEREUM` fetches the
+  request to sign from the Tesser API and checks that it matches your
+  parameters before signing. The method signature and result format are
+  unchanged.
 - `signCreateWallet` can throw `TesserError.APIError`,
-  `TesserError.ConnectionError`, and `TesserError.TimeoutError` from the
-  unsigned-payload request; all three are retryable. A payload that fails the
-  checks throws `TesserError.SigningError` and nothing is stamped.
+  `TesserError.ConnectionError`, and `TesserError.TimeoutError` when fetching
+  the request. `ConnectionError`, `TimeoutError`, and an `APIError` with
+  status 429 or 5xx are safe to retry; an `APIError` with any other 4xx
+  status fails the same way on retry. A fetched request that does not match throws
+  `TesserError.SigningError`, and nothing is signed.
 
 ### Removed
 
@@ -74,7 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `examples/create-wallet` reference script that performs the full OAuth
   handshake and submits a wallet-creation request against Tesser staging.
 
-[Unreleased]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.4...HEAD
+[Unreleased]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.4...v0.1.0
 [0.0.4]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.1...v0.0.2
