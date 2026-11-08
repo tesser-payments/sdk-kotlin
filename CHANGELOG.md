@@ -9,8 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.2.0] - 2026-11-08
+
+### Added
+
 - `apiBaseUrl` is optional again and `LocalSigner(signing)` is back. Code
-  written for 0.0.4 compiles and runs unchanged.
+  written for 0.0.4 needs no change. Ethereum wallet creation now makes a
+  network request: it needs outbound HTTPS (see the upgrade note), and
+  `signCreateWallet` can throw `APIError`, `ConnectionError` or
+  `TimeoutError` (see 0.1.0 for which are safe to retry).
 - Without `apiBaseUrl`, the first Ethereum `signCreateWallet` finds the
   environment of your signing key, production or sandbox, and the signer
   remembers it for later calls. If neither environment accepts your signing
@@ -22,14 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrading from 0.0.x: those versions made no network requests. Ethereum
   wallet creation now needs outbound HTTPS to `api.tesser.xyz`, and to
   `api-sandbox.tesser.xyz` for sandbox signing keys.
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.1.0] - 2026-11-08
 
@@ -99,7 +108,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `examples/create-wallet` reference script that performs the full OAuth
   handshake and submits a wallet-creation request against Tesser staging.
 
-[Unreleased]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.4...v0.1.0
 [0.0.4]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.2...v0.0.3
