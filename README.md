@@ -10,7 +10,7 @@ Tesser API. Targets JVM 17+ and Kotlin 2.0+.
 
 ```kotlin
 dependencies {
-    implementation("xyz.tesser:sdk:0.0.2")
+    implementation("xyz.tesser:sdk:0.0.4")
 }
 ```
 
@@ -20,7 +20,7 @@ dependencies {
 <dependency>
     <groupId>xyz.tesser</groupId>
     <artifactId>sdk</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.4</version>
 </dependency>
 ```
 
@@ -42,6 +42,7 @@ fun main() = runBlocking {
       privateKey = System.getenv("SIGNING_PRIVATE_KEY"),
       enclaveId  = System.getenv("SIGNING_ENCLAVE_ID"),
     ),
+    apiBaseUrl = "https://api.tesser.xyz", // sandbox: https://api-sandbox.tesser.xyz
   )
 
   val signed = signer.signCreateWallet(
@@ -67,33 +68,40 @@ troubleshooting.
 
 ## What's included
 
-- `LocalSigner.signCreateWallet(...)` builds and signs an
-  `ACTIVITY_TYPE_CREATE_WALLET` payload locally. No network calls; the private
-  key never leaves the JVM.
+- `LocalSigner(signing, apiBaseUrl)` requires the Tesser API base URL
+  (`https://api.tesser.xyz` or `https://api-sandbox.tesser.xyz`). An optional
+  `java.net.http.HttpClient` can be passed to configure a proxy.
+- `LocalSigner.signCreateWallet(...)` signs a wallet-creation request. For
+  `STABLECOIN_ETHEREUM`, it first fetches the request to sign from the Tesser
+  API and checks that it matches your parameters. The private key never leaves
+  the JVM.
 - `LocalSigner.signStep(...)` signs the unsigned transaction bytes that the
   Tesser API delivers via a `step.signature_requested` webhook event. The
   resulting signature is the value submitted back to
   `POST /v1/treasury/rebalances/{transferId}/steps/{stepId}/sign`.
 - Three wallet types: `STABLECOIN_ETHEREUM`, `STABLECOIN_SOLANA`, and
-  `STABLECOIN_STELLAR`. Ethereum is exercised end-to-end against Tesser
-  staging. Solana and Stellar are not yet verified against the live API.
-- Sealed `TesserError` hierarchy. The signer throws `ConfigError` for bad
-  input (blank keys, unknown wallet type) and `SigningError` for any
-  cryptographic failure.
+  `STABLECOIN_STELLAR`. Tesser currently supports managed wallets for
+  `STABLECOIN_ETHEREUM` only.
+- Sealed `TesserError` hierarchy. The constructor throws
+  `IllegalArgumentException` for blank keys or an invalid `apiBaseUrl`. The
+  signer throws `ConfigError` for an unknown wallet type and `SigningError`
+  for any signing failure or a fetched request that does not match your
+  parameters. Fetching
+  the request can throw `APIError`, `ConnectionError`, or `TimeoutError`.
+  `ConnectionError`, `TimeoutError`, and an `APIError` with status 429 or 5xx
+  are safe to retry; an `APIError` with any other 4xx status fails the same
+  way on retry.
 
 ## Tempo transfers
 
-1. Pass the backend-provided native Tempo transaction (`0x76...`), customer
-   wallet address, and `TEMPO` or `TEMPO_MODERATO` in `StepForSigning` to
+1. Pass the Tempo transaction Tesser provides (`0x76...`), your wallet
+   address, and `TEMPO` or `TEMPO_MODERATO` in `StepForSigning` to
    `LocalSigner.signStep(...)`.
-2. The SDK stamps a Turnkey request with `TRANSACTION_TYPE_TEMPO`, preserving
-   the transaction bytes exactly. Submit the returned `signature` to the
-   existing Tesser signing endpoint.
-3. Tesser obtains the customer signature from Turnkey, adds its sponsor
-   signature, and broadcasts the sponsored transfer. Tesser manages the
-   sponsor key and network fee.
+2. The SDK authorizes the transaction with your API key, without changing
+   it. Submit the returned `signature` to the Tesser signing endpoint.
+3. Tesser completes the transfer, broadcasts it, and pays the network fee.
 
-Unknown networks raise `TesserError.ConfigError` before the SDK creates a stamp.
+Unknown networks raise `TesserError.ConfigError` before anything is signed.
 
 ## Contributing
 

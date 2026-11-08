@@ -24,6 +24,8 @@ class CreateWalletActivityTest {
             enclaveId = "org_test_123",
         )
 
+    private val api = TesserApiConnection("https://api.tesser.xyz", StubHttpClient.failingWith(AssertionError("no HTTP expected")))
+
     private fun mockStamp(): Stamp =
         mockk<Stamp>().also {
             coEvery { it.stamp(any(), any()) } returns
@@ -39,8 +41,9 @@ class CreateWalletActivityTest {
             val result =
                 signCreateWalletInternal(
                     signing = cfg,
-                    params = CreateWalletParams(name = "test wallet", type = WalletType.STABLECOIN_ETHEREUM),
+                    params = CreateWalletParams(name = "test wallet", type = WalletType.STABLECOIN_SOLANA),
                     stamp = mockStamp(),
+                    api = api,
                 )
             val body = Json.parseToJsonElement(result.metadata.body).jsonObject
             body["type"]?.jsonPrimitive?.content shouldBe "ACTIVITY_TYPE_CREATE_WALLET"
@@ -54,16 +57,17 @@ class CreateWalletActivityTest {
             val result =
                 signCreateWalletInternal(
                     signing = cfg,
-                    params = CreateWalletParams(name = "alpha", type = WalletType.STABLECOIN_ETHEREUM),
+                    params = CreateWalletParams(name = "alpha", type = WalletType.STABLECOIN_SOLANA),
                     stamp = mockStamp(),
+                    api = api,
                 )
             val params = Json.parseToJsonElement(result.metadata.body).jsonObject["parameters"]!!.jsonObject
             params["walletName"]?.jsonPrimitive?.content shouldBe "alpha"
             val accounts = params["accounts"]!!.jsonArray
             accounts shouldHaveSize 1
             val first = accounts[0].jsonObject
-            first["curve"]?.jsonPrimitive?.content shouldBe "CURVE_SECP256K1"
-            first["addressFormat"]?.jsonPrimitive?.content shouldBe "ADDRESS_FORMAT_ETHEREUM"
+            first["curve"]?.jsonPrimitive?.content shouldBe "CURVE_ED25519"
+            first["addressFormat"]?.jsonPrimitive?.content shouldBe "ADDRESS_FORMAT_SOLANA"
         }
 
     @Test
@@ -72,8 +76,9 @@ class CreateWalletActivityTest {
             val result =
                 signCreateWalletInternal(
                     signing = cfg,
-                    params = CreateWalletParams(name = "alpha", type = WalletType.STABLECOIN_ETHEREUM),
+                    params = CreateWalletParams(name = "alpha", type = WalletType.STABLECOIN_SOLANA),
                     stamp = mockStamp(),
+                    api = api,
                 )
             val decoded = String(Base64.getDecoder().decode(result.signature))
             val composite = Json.parseToJsonElement(decoded).jsonObject
@@ -87,8 +92,9 @@ class CreateWalletActivityTest {
             val result =
                 signCreateWalletInternal(
                     signing = cfg,
-                    params = CreateWalletParams(name = "alpha", type = WalletType.STABLECOIN_ETHEREUM),
+                    params = CreateWalletParams(name = "alpha", type = WalletType.STABLECOIN_SOLANA),
                     stamp = mockStamp(),
+                    api = api,
                 )
             result.metadata.stampHeaderName shouldBe "X-Stamp"
             result.metadata.stampHeaderValue shouldBe "FAKE_STAMP_VALUE"

@@ -1,7 +1,7 @@
 package xyz.tesser.sdk.internal.signing
 
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
@@ -9,21 +9,16 @@ import xyz.tesser.sdk.WalletType
 
 class WalletTypeAccountsTest {
     @Test
-    fun `every WalletType has at least one account spec`() {
-        WalletType.entries.forEach { wt ->
+    fun `every locally-built WalletType has at least one account spec`() {
+        WalletType.entries.filter { it != WalletType.STABLECOIN_ETHEREUM }.forEach { wt ->
             val specs = WALLET_TYPE_ACCOUNTS[wt]
             specs.shouldNotBeNull().shouldNotBeEmpty()
         }
     }
 
     @Test
-    fun `Ethereum spec uses secp256k1 + Ethereum address format`() {
-        val specs = WALLET_TYPE_ACCOUNTS[WalletType.STABLECOIN_ETHEREUM]!!
-        specs shouldHaveSize 1
-        specs[0].curve shouldBe "CURVE_SECP256K1"
-        specs[0].pathFormat shouldBe "PATH_FORMAT_BIP32"
-        specs[0].path shouldBe "m/44'/60'/0'/0/0"
-        specs[0].addressFormat shouldBe "ADDRESS_FORMAT_ETHEREUM"
+    fun `Ethereum has no local account spec`() {
+        WALLET_TYPE_ACCOUNTS[WalletType.STABLECOIN_ETHEREUM].shouldBeNull()
     }
 
     @Test

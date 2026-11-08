@@ -51,7 +51,7 @@ import kotlin.time.Duration.Companion.seconds
 fun main(): Unit =
     runBlocking {
         val config = ExampleConfig.fromEnv()
-        val signer = LocalSigner(config.signing)
+        val signer = LocalSigner(config.signing, apiBaseUrl = config.tesserBaseUrl)
         println("Signer ready for enclave=${signer.signing.enclaveId}")
 
         val token = fetchAccessToken(config)

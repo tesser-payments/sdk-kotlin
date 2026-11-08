@@ -10,6 +10,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `LocalSigner.signStep(...)` supports `TEMPO` and `TEMPO_MODERATO` with `TRANSACTION_TYPE_TEMPO`. The SDK preserves the backend-provided transaction and authorizes customer signing; Tesser adds the sponsor signature.
+- `LocalSigner` accepts an optional `java.net.http.HttpClient` for the
+  unsigned-payload request, for example to configure a proxy.
+
+### Changed
+
+- **Breaking:** `LocalSigner` requires an `apiBaseUrl`
+  (`LocalSigner(signing, apiBaseUrl)`): `https://api.tesser.xyz` in
+  production, `https://api-sandbox.tesser.xyz` in sandbox. A trailing `/` or
+  `/v1` is removed.
+- `LocalSigner.signCreateWallet(...)` for `STABLECOIN_ETHEREUM` fetches an
+  `ACTIVITY_TYPE_CREATE_WALLET_ACCOUNTS` body for the workspace's master
+  wallet from `GET /v1/accounts/wallets/unsigned-payload` (one stamped request
+  per call, 10 second timeout, no cache), checks its activity type,
+  organization ID, single account name, and Ethereum address format, and
+  stamps it unchanged. The method signature and the `base64({body, stamp})`
+  result are unchanged. Solana and Stellar keep the locally-built
+  `ACTIVITY_TYPE_CREATE_WALLET` body.
+- `signCreateWallet` can throw `TesserError.APIError`,
+  `TesserError.ConnectionError`, and `TesserError.TimeoutError` from the
+  unsigned-payload request; all three are retryable. A payload that fails the
+  checks throws `TesserError.SigningError` and nothing is stamped.
+
+### Removed
+
+- **Breaking:** the `LocalSigner(signing: SigningConfig)` constructor.
+
+## [0.0.4] - 2026-07-07
+
+### Added
+- `LocalSigner.signStep(...)` supports `ETHEREUM_SEPOLIA`
+  (`TRANSACTION_TYPE_ETHEREUM`).
+
+### Fixed
+- The rebalance examples send the `{"desired": {"from", "to"}}` request body.
+
+## [0.0.3] - 2026-05-11
+
+### Fixed
+- The rebalance examples wait for the signed step's `completed` status instead
+  of `finalized`.
 
 ## [0.0.2] - 2026-05-05
 
@@ -34,6 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `examples/create-wallet` reference script that performs the full OAuth
   handshake and submits a wallet-creation request against Tesser staging.
 
-[Unreleased]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.2...HEAD
+[Unreleased]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.4...HEAD
+[0.0.4]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.3...v0.0.4
+[0.0.3]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/tesser-payments/sdk-kotlin/releases/tag/v0.0.1
