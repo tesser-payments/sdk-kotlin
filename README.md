@@ -65,17 +65,40 @@ For runnable end-to-end scripts, see [`examples/create-wallet`](./examples/creat
 Each example's README walks through env setup, the runtime sequence, and
 troubleshooting.
 
+## Set the API URL (optional)
+
+You don't need to set anything. `LocalSigner(signing)` works with production
+and sandbox signing keys.
+
+Setting `apiBaseUrl` only helps on sandbox. Without it, the first Ethereum
+`signCreateWallet` of each signer calls production first, which rejects a
+sandbox key, and then calls sandbox. With `apiBaseUrl` set to sandbox, the
+signer skips that extra call, so wallet creation is faster. In production,
+leave it unset: production is already tried first.
+
+```kotlin
+val signer = LocalSigner(
+  SigningConfig(
+    publicKey  = System.getenv("SIGNING_PUBLIC_KEY"),
+    privateKey = System.getenv("SIGNING_PRIVATE_KEY"),
+    enclaveId  = System.getenv("SIGNING_ENCLAVE_ID"),
+  ),
+  apiBaseUrl = "https://api-sandbox.tesser.xyz",
+)
+```
+
+- Only Ethereum `signCreateWallet` calls the Tesser API. `signStep` makes no
+  network calls, so this setting does not affect it.
+- When set, only this URL is used, with no fallback. It must match the
+  environment of your signing key.
+- Also set it if your network allows only one Tesser host.
+
 ## What's included
 
 - `LocalSigner(signing)` works with production and sandbox signing keys.
-  Without `apiBaseUrl`, the first Ethereum `signCreateWallet` tries
-  production and, if production does not accept your signing key, sandbox,
-  and remembers it for later calls. Set `apiBaseUrl`
-  (`https://api.tesser.xyz` or `https://api-sandbox.tesser.xyz`) if your
-  network allows only one Tesser host, or if you create a new signer per
-  request (each new signer detects again). Send your own API requests to the
-  environment of your signing key. An optional `java.net.http.HttpClient` can
-  be passed to configure a proxy.
+  See [Set the API URL (optional)](#set-the-api-url-optional).
+  Send your own API requests to the environment of your signing key.
+  An optional `java.net.http.HttpClient` can be passed to configure a proxy.
 - `LocalSigner.signCreateWallet(...)` signs a wallet-creation request. For
   `STABLECOIN_ETHEREUM`, it first fetches the request to sign from the Tesser
   API and checks that it matches your parameters. The private key never leaves
