@@ -13,17 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
-- `TesserErrorDetail.uiMessage`. `ui_message` is meant for Tesser's
-  dashboard, and the Tesser API will stop returning it to API-key requests on
-  a date to be announced. The property stays nullable and is still parsed
-  when present; after that date it will be `null`. Use `errorMessage`
-  instead, and `errorCode` for logic.
-
 ### Removed
 
 ### Fixed
 
 ### Security
+
+## [0.2.1] - 2026-11-19
+
+### Deprecated
+
+- `TesserErrorDetail.uiMessage`. `ui_message` is meant for Tesser's
+  dashboard, and the Tesser API will stop returning it to API-key requests on
+  a date to be announced. The property stays nullable and is still parsed
+  when present; after that date it will be `null`. Use `errorMessage`
+  instead, and `errorCode` for logic.
 
 ## [0.2.0] - 2026-11-08
 
@@ -114,7 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `examples/create-wallet` reference script that performs the full OAuth
   handshake and submits a wallet-creation request against Tesser staging.
 
-[Unreleased]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.4...v0.1.0
 [0.0.4]: https://github.com/tesser-payments/sdk-kotlin/compare/v0.0.3...v0.0.4
